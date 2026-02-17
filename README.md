@@ -13,7 +13,10 @@ Test locally from the repo root:
 
     claude --plugin-dir .
 
-**Manual install (alternative)** — if you prefer direct setup without the plugin system, copy the hook scripts and configure `settings.json` manually:
+<details>
+<summary>Manual install (alternative)</summary>
+
+If you prefer direct setup without the plugin system, copy the hook scripts and configure `settings.json` manually:
 
 1. Copy `hooks/plan-annotate.py` and `hooks/skill-forced-eval-hook.sh` to `~/.claude/scripts/`
 2. Make them executable: `chmod +x ~/.claude/scripts/plan-annotate.py ~/.claude/scripts/skill-forced-eval-hook.sh`
@@ -41,6 +44,41 @@ Test locally from the repo root:
 ```
 
 4. Restart Claude Code for hooks to take effect.
+
+</details>
+
+## Components
+
+| Type | Name | Trigger | Description |
+|------|------|---------|-------------|
+| skill | [brainstorm](#skillsbrainstorm) | `/cc-thingz:brainstorm` | Collaborative design dialogue — idea → approaches → design → plan |
+| command | [plan](#commandsplan) | `/cc-thingz:plan <desc>` | Structured implementation plan with interactive review loop |
+| hook | [plan-annotate.py](#hooksplan-annotatepy) | `PreToolUse` / CLI | Plan annotation in `$EDITOR` with diff-based feedback loop |
+| hook | [skill-forced-eval-hook.sh](#hooksskill-forced-eval-hooksh) | `UserPromptSubmit` | Forces skill evaluation before every response |
+
+## skills/brainstorm
+
+Collaborative design skill activated by `/cc-thingz:brainstorm` or trigger phrases like "brainstorm", "let's brainstorm", "help me design", "explore options for", etc.
+
+Guides a 4-phase dialogue to turn ideas into designs:
+
+1. **Understand** — gathers project context, asks questions one at a time (multiple choice preferred)
+2. **Explore Approaches** — proposes 2-3 options with trade-offs, leads with recommendation
+3. **Present Design** — breaks design into sections of 200-300 words, validates each incrementally
+4. **Next Steps** — offers to write a plan (`/cc-thingz:plan`), enter plan mode, or start implementing
+
+## commands/plan
+
+Structured implementation plan creator activated by `/cc-thingz:plan <description>`. Creates a plan file in `docs/plans/yyyymmdd-<task-name>.md` through interactive context gathering.
+
+Workflow:
+- **Step 0** — parses intent and explores codebase for relevant context
+- **Step 1** — asks focused questions one at a time (goal, scope, constraints, testing approach, title)
+- **Step 1.5** — proposes 2-3 implementation approaches with trade-offs (skipped if obvious)
+- **Step 2** — creates the plan file with tasks, file lists, test requirements, and progress tracking
+- **Step 3** — offers interactive review (opens plan in `$EDITOR` via `plan-annotate.py`), auto review, start implementation, or done
+
+The interactive review runs `plan-annotate.py` from the plugin root, creating an annotation feedback loop until the plan is finalized.
 
 ## hooks/plan-annotate.py
 

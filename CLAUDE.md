@@ -24,6 +24,8 @@ Things to make Claude Code even better — hooks, skills, agents, and commands, 
 
 - `.claude-plugin/` — plugin manifest (`plugin.json`) and marketplace catalog (`marketplace.json`)
 - `hooks/` — hook scripts and hook definitions (`hooks.json`) for Claude Code
+- `skills/` — skill definitions (SKILL.md files) for Claude Code
+- `commands/` — slash command definitions for Claude Code
 
 ## Testing
 
