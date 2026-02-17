@@ -1,0 +1,11 @@
+{
+  "name": "review",
+  "description": "PR review with architecture analysis, scope creep detection, and writing style guide",
+  "version": "1.0.0",
+  "author": {
+    "name": "Umputun"
+  },
+  "homepage": "https://github.com/umputun/cc-thingz",
+  "repository": "https://github.com/umputun/cc-thingz",
+  "license": "MIT"
+}

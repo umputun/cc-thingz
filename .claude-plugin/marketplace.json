@@ -5,9 +5,24 @@
   },
   "plugins": [
     {
-      "name": "cc-thingz",
-      "source": "./",
-      "description": "Things to make Claude Code even better"
+      "name": "brainstorm",
+      "source": "./plugins/brainstorm",
+      "description": "Collaborative design dialogue - idea to approaches to design to plan"
+    },
+    {
+      "name": "review",
+      "source": "./plugins/review",
+      "description": "PR review with architecture analysis, scope creep detection, and writing style guide"
+    },
+    {
+      "name": "planning",
+      "source": "./plugins/planning",
+      "description": "Structured implementation planning with interactive annotation review"
+    },
+    {
+      "name": "skill-eval",
+      "source": "./plugins/skill-eval",
+      "description": "Forces skill evaluation before every response"
     }
   ]
 }

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-Things to make Claude Code even better — hooks, skills, agents, and commands, packaged as a Claude Code plugin.
+Things to make Claude Code even better — hooks, skills, and commands, organized as a marketplace of independent plugins.
 
 ## Key Rules
 
@@ -18,15 +18,19 @@ Things to make Claude Code even better — hooks, skills, agents, and commands, 
 
 - Hook scripts use `${CLAUDE_PLUGIN_ROOT}` for path resolution when running as a plugin. The plugin system copies files to a cache location during install, so absolute/relative paths won't work.
 - Manual install instructions are kept in README.md as a fallback for users who prefer direct setup.
-- **Versioning** — bump `version` in `.claude-plugin/plugin.json` when adding or changing plugin components. Use semver: patch for bug fixes, minor for new hooks/skills/agents, major for breaking changes.
+- **Versioning** — each plugin has its own `version` in `plugins/<name>/.claude-plugin/plugin.json`. Bump independently per plugin. Use semver: patch for bug fixes, minor for new components, major for breaking changes.
+- **Cross-references** — when skills reference other skills within the same plugin, use the plugin name prefix (e.g., `/review:writing-style`). When referencing skills in other plugins, use that plugin's name (e.g., `/planning:plan`).
 
 ## Structure
 
-- `.claude-plugin/` — plugin manifest (`plugin.json`) and marketplace catalog (`marketplace.json`)
-- `hooks/` — hook scripts and hook definitions (`hooks.json`) for Claude Code
-- `skills/` — skill definitions (SKILL.md files) for Claude Code
-- `commands/` — slash command definitions for Claude Code
+- `.claude-plugin/marketplace.json` — marketplace catalog listing all plugins
+- `plugins/` — each subdirectory is an independent plugin:
+  - `plugins/brainstorm/` — collaborative design skill
+  - `plugins/review/` — PR review skill + writing style skill
+  - `plugins/planning/` — plan command + plan-annotate hook
+  - `plugins/skill-eval/` — skill evaluation hook
+- Each plugin has its own `.claude-plugin/plugin.json`, and standard subdirectories (`skills/`, `commands/`, `hooks/`) as needed.
 
 ## Testing
 
-- Python scripts include embedded tests run via `--test` flag: `python3 hooks/<script>.py --test`
+- Python scripts include embedded tests run via `--test` flag: `python3 plugins/planning/hooks/plan-annotate.py --test`
