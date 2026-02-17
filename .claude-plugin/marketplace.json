@@ -20,6 +20,11 @@
       "description": "Structured implementation planning with interactive annotation review"
     },
     {
+      "name": "release-tools",
+      "source": "./plugins/release-tools",
+      "description": "Release workflow tools - auto-versioning, release notes, changelog updates"
+    },
+    {
       "name": "thinking-tools",
       "source": "./plugins/thinking-tools",
       "description": "Analytical thinking tools - dialectic analysis, bias elimination"

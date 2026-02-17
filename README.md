@@ -11,6 +11,7 @@ Add the marketplace, then install the plugins you want:
     /plugin install brainstorm@umputun-cc-thingz
     /plugin install review@umputun-cc-thingz
     /plugin install planning@umputun-cc-thingz
+    /plugin install release-tools@umputun-cc-thingz
     /plugin install thinking-tools@umputun-cc-thingz
     /plugin install skill-eval@umputun-cc-thingz
 
@@ -57,6 +58,13 @@ Add the plan-annotate hook to `~/.claude/settings.json`:
     }]
   }
 }
+```
+
+**release-tools** — skills + scripts:
+```bash
+cp -r plugins/release-tools/skills/release ~/.claude/skills/
+cp -r plugins/release-tools/skills/last-tag ~/.claude/skills/
+chmod +x ~/.claude/skills/release/scripts/*.sh
 ```
 
 **thinking-tools** — skills:
@@ -150,6 +158,19 @@ Structured implementation planning with interactive annotation review.
 - *File mode* (`plan-annotate.py <plan-file>`) — outputs unified diff to stdout for integration with custom workflows
 
 Requirements: tmux or kitty terminal, `$EDITOR` (defaults to `micro`). Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
+
+### release-tools
+
+Release workflow tools for creating versioned releases with auto-generated notes.
+
+| Component | Trigger | Description |
+|-----------|---------|-------------|
+| skill | `/release-tools:release` | Create GitHub/GitLab/Gitea release with auto-versioning and release notes |
+| skill | `/release-tools:last-tag` | Show commits since the last git tag in a formatted table |
+
+**release** — full release workflow: asks release type (hotfix/minor/major), auto-detects platform (GitHub/GitLab/Gitea), calculates semantic version, generates release notes grouped by type (features/improvements/fixes) from merged PRs and commits, updates CHANGELOG if present, shows preview for confirmation, then publishes. Includes helper scripts for platform detection, version calculation, and notes generation.
+
+**last-tag** — shows commits since the last git tag in a formatted table with date, author, hash, and description. Detects single vs multiple authors and adjusts table layout. Offers interactive drill-down into individual commit details.
 
 ### thinking-tools
 
