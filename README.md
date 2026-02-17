@@ -197,6 +197,10 @@ Forces skill evaluation before every response.
 
 By default, Claude Code often ignores available skills and jumps straight to generic responses. This hook injects a system reminder on every prompt that enforces an evaluate → activate → implement sequence. When installed, Claude will either list relevant skills and call `Skill()` for each before implementing, or proceed directly when no skills are relevant.
 
+## Credits
+
+Some skills and scripts were influenced by or adapted from community ideas, blog posts, and open-source examples. Sources were not tracked accurately from the start. If you recognize your work and want proper attribution, please [open an issue](https://github.com/umputun/cc-thingz/issues) — I'll fix it.
+
 ## License
 
 MIT
