@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-A collection of utilities, configurations, and enhancements for Claude Code. This is not a Go project — it contains mixed content (scripts, configs, documentation, prompts, etc.) that improve the Claude Code workflow.
+Things to make Claude Code even better — hooks, skills, agents, and commands, packaged as a Claude Code plugin.
 
 ## Key Rules
 
@@ -16,12 +16,15 @@ A collection of utilities, configurations, and enhancements for Claude Code. Thi
 
 ## Conventions
 
-- Scripts contain full install instructions in their docstrings. README install sections use a Claude Code prompt that fetches the raw file from GitHub and tells Claude to follow the embedded instructions — this avoids duplicating install steps between README and script.
+- Hook scripts use `${CLAUDE_PLUGIN_ROOT}` for path resolution when running as a plugin. The plugin system copies files to a cache location during install, so absolute/relative paths won't work.
+- Manual install instructions are kept in README.md as a fallback for users who prefer direct setup.
+- **Versioning** — bump `version` in `.claude-plugin/plugin.json` when adding or changing plugin components. Use semver: patch for bug fixes, minor for new hooks/skills/agents, major for breaking changes.
 
 ## Structure
 
-- `scripts/` — standalone scripts (Python, shell) for Claude Code hooks and utilities
+- `.claude-plugin/` — plugin manifest (`plugin.json`) and marketplace catalog (`marketplace.json`)
+- `hooks/` — hook scripts and hook definitions (`hooks.json`) for Claude Code
 
 ## Testing
 
-- Python scripts include embedded tests run via `--test` flag: `python3 scripts/<script>.py --test`
+- Python scripts include embedded tests run via `--test` flag: `python3 hooks/<script>.py --test`

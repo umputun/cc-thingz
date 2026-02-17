@@ -1,0 +1,13 @@
+{
+  "name": "umputun-cc-thingz",
+  "owner": {
+    "name": "Umputun"
+  },
+  "plugins": [
+    {
+      "name": "cc-thingz",
+      "source": "./",
+      "description": "Things to make Claude Code even better"
+    }
+  ]
+}

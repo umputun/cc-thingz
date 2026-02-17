@@ -1,9 +1,48 @@
 # cc-thingz
 
-A collection of utilities, configurations, and enhancements for [Claude Code](https://claude.ai/code).
+Things to make [Claude Code](https://claude.ai/code) even better — hooks, skills, agents, and commands, packaged as a Claude Code plugin.
 
+## Install
 
-## scripts/plan-annotate.py
+Add the marketplace and install:
+
+    /plugin marketplace add umputun/cc-thingz
+    /plugin install cc-thingz@umputun-cc-thingz
+
+Test locally from the repo root:
+
+    claude --plugin-dir .
+
+**Manual install (alternative)** — if you prefer direct setup without the plugin system, copy the hook scripts and configure `settings.json` manually:
+
+1. Copy `hooks/plan-annotate.py` and `hooks/skill-forced-eval-hook.sh` to `~/.claude/scripts/`
+2. Make them executable: `chmod +x ~/.claude/scripts/plan-annotate.py ~/.claude/scripts/skill-forced-eval-hook.sh`
+3. Add hook entries to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "ExitPlanMode",
+      "hooks": [{
+        "type": "command",
+        "command": "~/.claude/scripts/plan-annotate.py",
+        "timeout": 345600
+      }]
+    }],
+    "UserPromptSubmit": [{
+      "hooks": [{
+        "type": "command",
+        "command": "~/.claude/scripts/skill-forced-eval-hook.sh"
+      }]
+    }]
+  }
+}
+```
+
+4. Restart Claude Code for hooks to take effect.
+
+## hooks/plan-annotate.py
 
 Interactive plan annotation tool for Claude Code. Opens plans in your `$EDITOR` via a terminal overlay (tmux popup or kitty overlay), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. This creates a feedback loop: annotate → Claude revises → annotate again → until you close the editor without changes.
 
@@ -21,25 +60,13 @@ Interactive plan annotation tool for Claude Code. Opens plans in your `$EDITOR` 
 
 **Requirements:** tmux or kitty terminal, `$EDITOR` (defaults to `micro`)
 
-**Install:**
+**Run tests:** `python3 hooks/plan-annotate.py --test`
 
-Ask Claude Code:
-
-> Fetch https://raw.githubusercontent.com/umputun/cc-thingz/master/scripts/plan-annotate.py, read the install instructions in its docstring, and follow them.
-
-**Run tests:** `python3 scripts/plan-annotate.py --test`
-
-## scripts/skill-forced-eval-hook.sh
+## hooks/skill-forced-eval-hook.sh
 
 `UserPromptSubmit` hook that forces Claude to evaluate and activate relevant skills before proceeding with implementation. By default, Claude Code often ignores available skills and jumps straight to generic responses. This hook injects a system reminder on every prompt that enforces an evaluate → activate → implement sequence.
 
 When installed, Claude will either list relevant skills and call `Skill()` for each before implementing, or proceed directly when no skills are relevant.
-
-**Install:**
-
-Ask Claude Code:
-
-> Fetch https://raw.githubusercontent.com/umputun/cc-thingz/master/scripts/skill-forced-eval-hook.sh, read the install instructions in its comments, and follow them.
 
 ## License
 

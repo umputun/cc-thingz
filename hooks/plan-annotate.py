@@ -20,19 +20,6 @@ annotation style - edit the plan text directly in your editor:
 any text change works - the hook diffs original vs edited and Claude sees
 exactly what you added, removed, or modified.
 
-hook integration (settings.json):
-
-    "hooks": {
-      "PreToolUse": [{
-        "matcher": "ExitPlanMode",
-        "hooks": [{
-          "type": "command",
-          "command": "~/.claude/scripts/plan-annotate.py",
-          "timeout": 345600
-        }]
-      }]
-    }
-
 hook receives JSON on stdin with the plan content in tool_input.plan field.
 returns PreToolUse hook JSON response with permissionDecision:
   - "ask"  → no changes made, proceed to normal confirmation
@@ -60,17 +47,6 @@ opens a copy of the plan file in $EDITOR. if user makes changes, outputs
 the unified diff to stdout (no JSON wrapping). Claude reads the diff,
 revises the plan file, and calls again - looping until no changes.
 
-install:
-    mkdir -p ~/.claude/scripts
-    cp plan-annotate.py ~/.claude/scripts/plan-annotate.py
-    chmod +x ~/.claude/scripts/plan-annotate.py
-
-then add the hook to ~/.claude/settings.json (create if missing).
-if the file already has a "hooks" section, merge the PreToolUse entry
-into the existing array. if not, add the full block shown above.
-
-after saving settings.json, restart Claude Code for hooks to take effect.
-
 usage:
     plan-annotate.py [--test]           # hook mode (stdin JSON)
     plan-annotate.py <plan-file>        # file mode (opens file copy in editor)
@@ -79,6 +55,7 @@ usage:
 import difflib
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -136,8 +113,11 @@ def open_editor(filepath: Path) -> int:
 
     # kitty: use sentinel file to detect when editor closes
     if shutil.which("kitty"):
-        sentinel = Path(tempfile.mktemp(prefix="plan-done-"))
-        wrapper = f'{editor} {filepath}; touch {sentinel}'
+        fd, sentinel_path = tempfile.mkstemp(prefix="plan-done-")
+        os.close(fd)
+        os.unlink(sentinel_path)
+        sentinel = Path(sentinel_path)
+        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         subprocess.run(
             ["kitty", "@", "launch", "--type=overlay",
              f"--title=Plan Review: {filepath.name}",
