@@ -30,6 +30,18 @@ Ask Claude Code:
 
 **Run tests:** `python3 scripts/plan-annotate.py --test`
 
+### scripts/skill-forced-eval-hook.sh
+
+`UserPromptSubmit` hook that forces Claude to evaluate and activate relevant skills before proceeding with implementation. By default, Claude Code often ignores available skills and jumps straight to generic responses. This hook injects a system reminder on every prompt that enforces an evaluate → activate → implement sequence.
+
+When installed, Claude will either list relevant skills and call `Skill()` for each before implementing, or proceed directly when no skills are relevant.
+
+**Install:**
+
+Ask Claude Code:
+
+> Fetch https://raw.githubusercontent.com/umputun/cc-thingz/master/scripts/skill-forced-eval-hook.sh, read the install instructions in its comments, and follow them.
+
 ## License
 
 MIT
