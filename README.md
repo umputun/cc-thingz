@@ -2,9 +2,8 @@
 
 A collection of utilities, configurations, and enhancements for [Claude Code](https://claude.ai/code).
 
-## Contents
 
-### scripts/plan-annotate.py
+## scripts/plan-annotate.py
 
 Interactive plan annotation tool for Claude Code. Opens plans in your `$EDITOR` via a terminal overlay (tmux popup or kitty overlay), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. This creates a feedback loop: annotate → Claude revises → annotate again → until you close the editor without changes.
 
@@ -30,7 +29,7 @@ Ask Claude Code:
 
 **Run tests:** `python3 scripts/plan-annotate.py --test`
 
-### scripts/skill-forced-eval-hook.sh
+## scripts/skill-forced-eval-hook.sh
 
 `UserPromptSubmit` hook that forces Claude to evaluate and activate relevant skills before proceeding with implementation. By default, Claude Code often ignores available skills and jumps straight to generic responses. This hook injects a system reminder on every prompt that enforces an evaluate → activate → implement sequence.
 
