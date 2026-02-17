@@ -20,6 +20,11 @@
       "description": "Structured implementation planning with interactive annotation review"
     },
     {
+      "name": "thinking-tools",
+      "source": "./plugins/thinking-tools",
+      "description": "Analytical thinking tools - dialectic analysis, bias elimination"
+    },
+    {
       "name": "skill-eval",
       "source": "./plugins/skill-eval",
       "description": "Forces skill evaluation before every response"

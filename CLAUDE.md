@@ -28,6 +28,7 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
   - `plugins/brainstorm/` — collaborative design skill
   - `plugins/review/` — PR review skill + writing style skill
   - `plugins/planning/` — plan command + plan-annotate hook
+  - `plugins/thinking-tools/` — dialectic analysis skill
   - `plugins/skill-eval/` — skill evaluation hook
 - Each plugin has its own `.claude-plugin/plugin.json`, and standard subdirectories (`skills/`, `commands/`, `hooks/`) as needed.
 

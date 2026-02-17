@@ -11,6 +11,7 @@ Add the marketplace, then install the plugins you want:
     /plugin install brainstorm@umputun-cc-thingz
     /plugin install review@umputun-cc-thingz
     /plugin install planning@umputun-cc-thingz
+    /plugin install thinking-tools@umputun-cc-thingz
     /plugin install skill-eval@umputun-cc-thingz
 
 Test a plugin locally:
@@ -56,6 +57,12 @@ Add the plan-annotate hook to `~/.claude/settings.json`:
     }]
   }
 }
+```
+
+**thinking-tools** — skills:
+```bash
+cp -r plugins/thinking-tools/skills/dialectic ~/.claude/skills/
+cp -r plugins/thinking-tools/skills/root-cause-investigator ~/.claude/skills/
 ```
 
 **skill-eval** — hook:
@@ -143,6 +150,21 @@ Structured implementation planning with interactive annotation review.
 - *File mode* (`plan-annotate.py <plan-file>`) — outputs unified diff to stdout for integration with custom workflows
 
 Requirements: tmux or kitty terminal, `$EDITOR` (defaults to `micro`). Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
+
+### thinking-tools
+
+Analytical thinking tools for objective analysis.
+
+| Component | Trigger | Description |
+|-----------|---------|-------------|
+| skill | `/thinking-tools:dialectic <statement>` | Prove and counter-prove a statement using parallel agents |
+| skill | `/thinking-tools:root-cause-investigator` | Systematic 5-Why root cause analysis for errors and bugs |
+
+**dialectic** — runs two agents in parallel with opposing goals (thesis vs antithesis) to eliminate confirmation bias. One agent finds all positive evidence, the other finds all negative evidence. After both complete, synthesizes findings into an objective conclusion and verifies cited evidence against actual code.
+
+Use cases: architecture decisions, bug analysis, performance claims, refactoring safety, code review.
+
+**root-cause-investigator** — applies 5-Why methodology to drill from symptoms to fundamental root causes. Structures investigation through progressive depth: surface cause → process issues → system problems → design issues → root cause. Includes reference materials for common patterns (race conditions, resource exhaustion, integration failures) and investigation techniques.
 
 ### skill-eval
 
