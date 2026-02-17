@@ -16,8 +16,23 @@ Test locally from the repo root:
 <details>
 <summary>Manual install (alternative)</summary>
 
-If you prefer direct setup without the plugin system, copy the hook scripts and configure `settings.json` manually:
+If you prefer direct setup without the plugin system, copy the files to your Claude Code config directory manually:
 
+**Skills** — copy each skill directory into `~/.claude/skills/`:
+```bash
+cp -r skills/brainstorm ~/.claude/skills/
+cp -r skills/writing-style ~/.claude/skills/
+cp -r skills/review-pr ~/.claude/skills/
+```
+
+**Commands** — copy command files into `~/.claude/commands/`:
+```bash
+cp commands/plan.md ~/.claude/commands/
+```
+
+Note: when installed manually, skills and commands are invoked without the `cc-thingz:` prefix (e.g., `/brainstorm` instead of `/cc-thingz:brainstorm`). Update the `/cc-thingz:writing-style` reference inside `review-pr/SKILL.md` to `/writing-style` accordingly.
+
+**Hooks** — copy scripts and configure `settings.json`:
 1. Copy `hooks/plan-annotate.py` and `hooks/skill-forced-eval-hook.sh` to `~/.claude/scripts/`
 2. Make them executable: `chmod +x ~/.claude/scripts/plan-annotate.py ~/.claude/scripts/skill-forced-eval-hook.sh`
 3. Add hook entries to `~/.claude/settings.json`:
@@ -43,7 +58,7 @@ If you prefer direct setup without the plugin system, copy the hook scripts and 
 }
 ```
 
-4. Restart Claude Code for hooks to take effect.
+Restart Claude Code for changes to take effect.
 
 </details>
 
@@ -52,6 +67,8 @@ If you prefer direct setup without the plugin system, copy the hook scripts and 
 | Type | Name | Trigger | Description |
 |------|------|---------|-------------|
 | skill | [brainstorm](#skillsbrainstorm) | `/cc-thingz:brainstorm` | Collaborative design dialogue — idea → approaches → design → plan |
+| skill | [writing-style](#skillswriting-style) | `/cc-thingz:writing-style` | Direct technical communication — anti-AI-speak, brevity, no filler |
+| skill | [review-pr](#skillsreview-pr) | `/cc-thingz:review-pr <number>` | PR review with architecture analysis, scope creep detection, and merge workflow |
 | command | [plan](#commandsplan) | `/cc-thingz:plan <desc>` | Structured implementation plan with interactive review loop |
 | hook | [plan-annotate.py](#hooksplan-annotatepy) | `PreToolUse` / CLI | Plan annotation in `$EDITOR` with diff-based feedback loop |
 | hook | [skill-forced-eval-hook.sh](#hooksskill-forced-eval-hooksh) | `UserPromptSubmit` | Forces skill evaluation before every response |
@@ -66,6 +83,35 @@ Guides a 4-phase dialogue to turn ideas into designs:
 2. **Explore Approaches** — proposes 2-3 options with trade-offs, leads with recommendation
 3. **Present Design** — breaks design into sections of 200-300 words, validates each incrementally
 4. **Next Steps** — offers to write a plan (`/cc-thingz:plan`), enter plan mode, or start implementing
+
+## skills/writing-style
+
+Technical communication style guide activated by `/cc-thingz:writing-style`. Enforces direct, brief writing for tickets, PRs, code reviews, and commit messages.
+
+Core principles:
+- **Brevity and directness** — get to the point, no filler, no pleasantries
+- **Honest feedback** — no artificial softening or hedging
+- **Problem-solution structure** — state problem, state fix, skip drama
+- **Technical precision** — file refs, links, code blocks
+- **Anti-AI-speak** — no "comprehensive", "leverage", "facilitate", "in order to", or other AI-typical language patterns
+
+Scope: applies to tickets, PRs, reviews, and commits. Does NOT apply to README.md, public docs, or blog posts — those use proper English.
+
+## skills/review-pr
+
+Comprehensive PR review skill activated by `/cc-thingz:review-pr <number>`. Analyzes code quality, architecture, test coverage, and identifies scope creep.
+
+Workflow:
+- **Phase 0** — detects PR vs issue (issues get a simpler comment-only flow)
+- **Phase 1** — fetches PR metadata, discussion history, merge status, and inline suggestions
+- **Phase 1.5** — asks review mode: Full (worktree + tests + linter + architecture) or Quick (diff-only)
+- **Phase 2** — sets up worktree and launches a subagent for deep analysis (file reading, validation, architecture, scope creep)
+- **Phase 3** — presents condensed findings, allows follow-up investigation
+- **Phase 4** — resolves open design questions with user input
+- **Phase 5** — drafts review comment using `/cc-thingz:writing-style`, checks for duplicates with user's previous comments, posts as formal review with approve/comment/request-changes options
+- **Post-approve** — analyzes commit history and recommends merge strategy (rebase vs squash vs merge)
+
+Uses `gh` CLI for all GitHub operations and git worktrees to avoid disrupting the current checkout.
 
 ## commands/plan
 
