@@ -1,7 +1,7 @@
 {
   "name": "review",
   "description": "PR review with architecture analysis, scope creep detection, and writing style guide",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": {
     "name": "Umputun"
   },

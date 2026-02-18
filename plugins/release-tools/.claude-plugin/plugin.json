@@ -1,7 +1,7 @@
 {
   "name": "release-tools",
   "description": "Release workflow tools - auto-versioning, release notes, changelog updates",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": {
     "name": "Umputun"
   },

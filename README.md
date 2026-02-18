@@ -27,20 +27,20 @@ Copy the files you want to your Claude Code config directory manually.
 
 **brainstorm** — skill:
 ```bash
-cp -r plugins/brainstorm/skills/brainstorm ~/.claude/skills/
+cp -r plugins/brainstorm/skills/do ~/.claude/skills/
 ```
 
 **review** — skills (review-pr + writing-style):
 ```bash
-cp -r plugins/review/skills/review-pr ~/.claude/skills/
+cp -r plugins/review/skills/pr ~/.claude/skills/
 cp -r plugins/review/skills/writing-style ~/.claude/skills/
 ```
 
-Note: update the `/review:writing-style` reference inside `review-pr/SKILL.md` to `/writing-style` when installed manually.
+Note: update the `/review:writing-style` reference inside `pr/SKILL.md` to `/writing-style` when installed manually.
 
 **planning** — command + hook:
 ```bash
-cp plugins/planning/commands/plan.md ~/.claude/commands/
+cp plugins/planning/commands/make.md ~/.claude/commands/
 cp plugins/planning/hooks/plan-annotate.py ~/.claude/scripts/
 chmod +x ~/.claude/scripts/plan-annotate.py
 ```
@@ -63,7 +63,7 @@ Add the plan-annotate hook to `~/.claude/settings.json`:
 
 **release-tools** — skills + scripts:
 ```bash
-cp -r plugins/release-tools/skills/release ~/.claude/skills/
+cp -r plugins/release-tools/skills/new ~/.claude/skills/
 cp -r plugins/release-tools/skills/last-tag ~/.claude/skills/
 chmod +x ~/.claude/skills/release/scripts/*.sh
 ```
@@ -121,18 +121,18 @@ Restart Claude Code for changes to take effect.
 
 ### brainstorm
 
-Collaborative design skill. Invoke with `/brainstorm:brainstorm` or trigger phrases like "brainstorm", "let's brainstorm", "help me design", "explore options for", etc.
+Collaborative design skill. Invoke with `/brainstorm:do` or trigger phrases like "brainstorm", "let's brainstorm", "help me design", "explore options for", etc.
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
-| skill | `/brainstorm:brainstorm` | Collaborative design dialogue — idea → approaches → design → plan |
+| skill | `/brainstorm:do` | Collaborative design dialogue — idea → approaches → design → plan |
 
 Guides a 4-phase dialogue to turn ideas into designs:
 
 1. **Understand** — gathers project context, asks questions one at a time (multiple choice preferred)
 2. **Explore Approaches** — proposes 2-3 options with trade-offs, leads with recommendation
 3. **Present Design** — breaks design into sections of 200-300 words, validates each incrementally
-4. **Next Steps** — offers to write a plan (`/planning:plan`), enter plan mode, or start implementing
+4. **Next Steps** — offers to write a plan (`/planning:make`), enter plan mode, or start implementing
 
 ### review
 
@@ -140,7 +140,7 @@ PR review and writing style tools. Install together — review-pr uses writing-s
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
-| skill | `/review:review-pr <number>` | PR review with architecture analysis, scope creep detection, and merge workflow |
+| skill | `/review:pr <number>` | PR review with architecture analysis, scope creep detection, and merge workflow |
 | skill | `/review:writing-style` | Direct technical communication — anti-AI-speak, brevity, no filler |
 
 **review-pr** — analyzes code quality, architecture, test coverage, and identifies scope creep:
@@ -162,7 +162,7 @@ Structured implementation planning with interactive annotation review.
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
-| command | `/planning:plan <desc>` | Structured implementation plan with interactive review loop |
+| command | `/planning:make <desc>` | Structured implementation plan with interactive review loop |
 | hook | `PreToolUse` / CLI | Plan annotation in `$EDITOR` with diff-based feedback loop |
 
 **plan command** — creates a plan file in `docs/plans/yyyymmdd-<task-name>.md` through interactive context gathering:
@@ -185,7 +185,7 @@ Release workflow tools for creating versioned releases with auto-generated notes
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
-| skill | `/release-tools:release` | Create GitHub/GitLab/Gitea release with auto-versioning and release notes |
+| skill | `/release-tools:new` | Create GitHub/GitLab/Gitea release with auto-versioning and release notes |
 | skill | `/release-tools:last-tag` | Show commits since the last git tag in a formatted table |
 
 **release** — full release workflow: asks release type (hotfix/minor/major), auto-detects platform (GitHub/GitLab/Gitea), calculates semantic version, generates release notes grouped by type (features/improvements/fixes) from merged PRs and commits, updates CHANGELOG if present, shows preview for confirmation, then publishes. Includes helper scripts for platform detection, version calculation, and notes generation.
