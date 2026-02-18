@@ -14,6 +14,7 @@ Add the marketplace, then install the plugins you want:
     /plugin install release-tools@umputun-cc-thingz
     /plugin install thinking-tools@umputun-cc-thingz
     /plugin install skill-eval@umputun-cc-thingz
+    /plugin install workflow@umputun-cc-thingz
 
 Test a plugin locally:
 
@@ -93,11 +94,30 @@ Add the skill-eval hook to `~/.claude/settings.json`:
 }
 ```
 
+**workflow** — skills:
+```bash
+cp -r plugins/workflow/skills/learn ~/.claude/skills/
+cp -r plugins/workflow/skills/clarify ~/.claude/skills/
+cp -r plugins/workflow/skills/wrong ~/.claude/skills/
+cp -r plugins/workflow/skills/md-copy ~/.claude/skills/
+cp -r plugins/workflow/skills/txt-copy ~/.claude/skills/
+```
+
 Restart Claude Code for changes to take effect.
 
 </details>
 
 ## Plugins
+
+| Plugin | Description |
+|--------|-------------|
+| [brainstorm](#brainstorm) | Collaborative design dialogue — idea to approaches to design to plan |
+| [review](#review) | PR review with architecture analysis + writing style guide |
+| [planning](#planning) | Structured implementation planning with interactive annotation review |
+| [release-tools](#release-tools) | Release workflow — auto-versioning, release notes, changelog |
+| [thinking-tools](#thinking-tools) | Analytical thinking — dialectic analysis, root cause investigation |
+| [skill-eval](#skill-eval) | Forces skill evaluation before every response |
+| [workflow](#workflow) | Session helpers — knowledge capture, confusion handling, clipboard copy |
 
 ### brainstorm
 
@@ -196,6 +216,28 @@ Forces skill evaluation before every response.
 | hook | `UserPromptSubmit` | Forces skill evaluation before every response |
 
 By default, Claude Code often ignores available skills and jumps straight to generic responses. This hook injects a system reminder on every prompt that enforces an evaluate → activate → implement sequence. When installed, Claude will either list relevant skills and call `Skill()` for each before implementing, or proceed directly when no skills are relevant.
+
+### workflow
+
+Session workflow helpers for knowledge capture, confusion handling, course correction, and clipboard operations.
+
+| Component | Trigger | Description |
+|-----------|---------|-------------|
+| skill | `/workflow:learn` | Capture strategic project knowledge to local CLAUDE.md |
+| skill | `/workflow:clarify` | Investigate and explain user confusion, determine if real issue exists |
+| skill | `/workflow:wrong` | Reset and re-evaluate when current approach isn't working |
+| skill | `/workflow:md-copy` | Format final answer as markdown and copy to clipboard |
+| skill | `/workflow:txt-copy` | Copy generated text content to clipboard |
+
+**learn** — reviews conversation history, extracts strategic project knowledge (architecture patterns, conventions, operational insights), and saves selected items to local CLAUDE.md. Uses granular selection via AskUserQuestion so the user picks exactly what to keep.
+
+**clarify** — activates on confusion signals ("I don't understand", "why is this happening", etc.). Investigates the actual codebase to determine whether the confusion stems from a misunderstanding or a real issue. If real, proceeds to plan mode for a fix.
+
+**wrong** — resets the current approach when it's not working. Re-analyzes the core problem, proposes 2-3 fresh alternatives with trade-offs, and recommends the best path forward.
+
+**md-copy** — formats the session's final answer as clean markdown (bold titles instead of headings, proper tables, code blocks) and copies to clipboard. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
+
+**txt-copy** — copies generated text (emails, messages, letters) to clipboard via a timestamped temp file. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
 
 ## Credits
 

@@ -31,6 +31,7 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
   - `plugins/release-tools/` — release workflow + last-tag skills
   - `plugins/thinking-tools/` — dialectic analysis + root-cause-investigator skills
   - `plugins/skill-eval/` — skill evaluation hook
+  - `plugins/workflow/` — session workflow helpers (learn, clarify, wrong, md-copy, txt-copy)
 - Each plugin has its own `.claude-plugin/plugin.json`, and standard subdirectories (`skills/`, `commands/`, `hooks/`) as needed.
 
 ## Testing

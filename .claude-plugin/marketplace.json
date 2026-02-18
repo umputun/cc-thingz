@@ -33,6 +33,11 @@
       "name": "skill-eval",
       "source": "./plugins/skill-eval",
       "description": "Forces skill evaluation before every response"
+    },
+    {
+      "name": "workflow",
+      "source": "./plugins/workflow",
+      "description": "Session workflow helpers - knowledge capture, confusion handling, course correction, clipboard copy"
     }
   ]
 }
