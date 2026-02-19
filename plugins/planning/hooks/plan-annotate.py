@@ -118,12 +118,14 @@ def open_editor(filepath: Path) -> int:
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
         wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
-        subprocess.run(
-            ["kitty", "@", "launch", "--type=overlay",
-             f"--title=Plan Review: {filepath.name}",
-             "sh", "-c", wrapper],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
+        cmd = ["kitty", "@", "launch", "--type=overlay",
+               f"--title=Plan Review: {filepath.name}"]
+        # target the kitty window where claude is running, not the active one
+        kitty_wid = os.environ.get("KITTY_WINDOW_ID")
+        if kitty_wid:
+            cmd.extend(["--match", f"id:{kitty_wid}"])
+        cmd.extend(["sh", "-c", wrapper])
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         while not sentinel.exists():
             time.sleep(0.3)
         sentinel.unlink(missing_ok=True)
