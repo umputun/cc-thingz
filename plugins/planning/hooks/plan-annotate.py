@@ -26,13 +26,13 @@ returns PreToolUse hook JSON response with permissionDecision:
   - "deny" → changes detected, unified diff sent as denial reason
 
 requirements:
-  - tmux or kitty terminal (tmux tried first, then kitty)
+  - tmux, kitty, or wezterm terminal (tmux tried first, then kitty, then wezterm)
   - $EDITOR set (defaults to micro)
 
-terminal priority: tmux display-popup → kitty overlay → error
+terminal priority: tmux display-popup → kitty overlay → wezterm split-pane → error
 
 limitations:
-  - requires tmux or kitty - without either, returns error (no annotation)
+  - requires tmux, kitty, or wezterm - without any, returns error (no annotation)
   - does not work in plain terminals (iTerm2, Terminal.app, etc.)
   - the hook blocks until the editor closes; timeout should be set high
   - plan content comes from Claude's ExitPlanMode call, not from the plan
@@ -98,8 +98,8 @@ def get_diff(original: str, edited: str) -> str:
 
 
 def open_editor(filepath: Path) -> int:
-    """open file in $EDITOR via tmux popup or kitty overlay, blocking until editor closes.
-    tries tmux first (if $TMUX is set), then kitty. returns non-zero if neither is available."""
+    """open file in $EDITOR via tmux popup, kitty overlay, or wezterm split-pane, blocking until editor closes.
+    tries tmux first (if $TMUX is set), then kitty, then wezterm. returns non-zero if none is available."""
     editor = os.environ.get("EDITOR", "micro")
 
     # tmux: display-popup -E blocks until the command exits, no sentinel needed
@@ -129,6 +129,24 @@ def open_editor(filepath: Path) -> int:
         sentinel.unlink(missing_ok=True)
         return 0
 
+    # wezterm: split-pane with sentinel file (same pattern as kitty)
+    wezterm_pane = os.environ.get("WEZTERM_PANE")
+    if wezterm_pane and shutil.which("wezterm"):
+        fd, sentinel_path = tempfile.mkstemp(prefix="plan-done-")
+        os.close(fd)
+        os.unlink(sentinel_path)
+        sentinel = Path(sentinel_path)
+        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        subprocess.run(
+            ["wezterm", "cli", "split-pane", "--bottom", "--percent", "80",
+             "--pane-id", wezterm_pane, "--", "sh", "-c", wrapper],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        while not sentinel.exists():
+            time.sleep(0.3)
+        sentinel.unlink(missing_ok=True)
+        return 0
+
     return 1
 
 
@@ -147,7 +165,7 @@ def run_file_mode(plan_file: Path) -> None:
 
     try:
         if open_editor(tmp_path) != 0:
-            print("error: no overlay terminal available (requires tmux or kitty)", file=sys.stderr)
+            print("error: no overlay terminal available (requires tmux, kitty, or wezterm)", file=sys.stderr)
             sys.exit(1)
 
         edited_content = tmp_path.read_text()
@@ -173,7 +191,7 @@ def run_hook_mode() -> None:
 
     try:
         if open_editor(tmp_path) != 0:
-            print(make_response("ask", "no overlay terminal available (requires tmux or kitty), skipping plan annotation"))
+            print(make_response("ask", "no overlay terminal available (requires tmux, kitty, or wezterm), skipping plan annotation"))
             return
 
         edited_content = tmp_path.read_text()
