@@ -174,12 +174,12 @@ Structured implementation planning with interactive annotation review.
 - **Step 2** — creates the plan file with tasks, file lists, test requirements, and progress tracking
 - **Step 3** — offers interactive review (opens plan in `$EDITOR` via plan-annotate), auto review, start implementation, or done
 
-**plan-annotate.py** — interactive plan annotation tool. Opens plans in your `$EDITOR` via a terminal overlay (tmux popup or kitty overlay), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. Two modes:
+**plan-annotate.py** — interactive plan annotation tool. Opens plans in your `$EDITOR` via a terminal overlay (tmux popup, kitty overlay, or wezterm split-pane), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. Two modes:
 
 - *Hook mode* (default) — intercepts `ExitPlanMode`, opens plan in editor, denies tool call with diff if changes made, forcing revision loop
 - *File mode* (`plan-annotate.py <plan-file>`) — outputs unified diff to stdout for integration with custom workflows
 
-Requirements: tmux or kitty terminal, `$EDITOR` (defaults to `micro`). Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
+Requirements: tmux, kitty, or wezterm terminal, `$EDITOR` (defaults to `micro`). Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
 
 ### release-tools
 
