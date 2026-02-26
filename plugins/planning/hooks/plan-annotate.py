@@ -28,12 +28,16 @@ returns PreToolUse hook JSON response with permissionDecision:
 requirements:
   - tmux, kitty, or wezterm terminal (tmux tried first, then kitty, then wezterm)
   - $EDITOR set (defaults to micro)
+  - kitty users: kitty.conf must have allow_remote_control and listen_on configured:
+      allow_remote_control yes
+      listen_on unix:/tmp/kitty-$KITTY_PID
 
 terminal priority: tmux display-popup → kitty overlay → wezterm split-pane → error
 
 limitations:
   - requires tmux, kitty, or wezterm - without any, returns error (no annotation)
   - does not work in plain terminals (iTerm2, Terminal.app, etc.)
+  - kitty requires KITTY_LISTEN_ON env var (set by kitty when listen_on is configured)
   - the hook blocks until the editor closes; timeout should be set high
   - plan content comes from Claude's ExitPlanMode call, not from the plan
     file on disk - if you edit the file on disk separately, those changes
@@ -111,14 +115,18 @@ def open_editor(filepath: Path) -> int:
         )
         return result.returncode
 
-    # kitty: use sentinel file to detect when editor closes
-    if shutil.which("kitty"):
+    # kitty: use sentinel file to detect when editor closes.
+    # requires KITTY_LISTEN_ON for socket communication — Claude Code runs
+    # without a TTY, so kitty @ can't auto-detect via /dev/tty.
+    # kitty.conf needs: allow_remote_control yes + listen_on unix:/tmp/kitty-$KITTY_PID
+    kitty_sock = os.environ.get("KITTY_LISTEN_ON")
+    if kitty_sock and shutil.which("kitty"):
         fd, sentinel_path = tempfile.mkstemp(prefix="plan-done-")
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
         wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
-        cmd = ["kitty", "@", "launch", "--type=overlay",
+        cmd = ["kitty", "@", "--to", kitty_sock, "launch", "--type=overlay",
                f"--title=Plan Review: {filepath.name}"]
         # target the kitty window where claude is running, not the active one
         kitty_wid = os.environ.get("KITTY_WINDOW_ID")

@@ -179,7 +179,14 @@ Structured implementation planning with interactive annotation review.
 - *Hook mode* (default) — intercepts `ExitPlanMode`, opens plan in editor, denies tool call with diff if changes made, forcing revision loop
 - *File mode* (`plan-annotate.py <plan-file>`) — outputs unified diff to stdout for integration with custom workflows
 
-Requirements: tmux, kitty, or wezterm terminal, `$EDITOR` (defaults to `micro`). Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
+Requirements: tmux, kitty, or wezterm terminal, `$EDITOR` (defaults to `micro`). **Kitty users** must enable remote control in `kitty.conf`:
+
+```
+allow_remote_control yes
+listen_on unix:/tmp/kitty-$KITTY_PID
+```
+
+Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
 
 ### release-tools
 
