@@ -173,6 +173,7 @@ Structured implementation planning with interactive annotation review.
 |-----------|---------|-------------|
 | command | `/planning:make <desc>` | Structured implementation plan with interactive review loop |
 | hook | `PreToolUse` / CLI | Plan annotation in `$EDITOR` with diff-based feedback loop |
+| agent | `plan-review` | Automated plan quality review — completeness, over-engineering, testing |
 
 **plan command** — creates a plan file in `docs/plans/yyyymmdd-<task-name>.md` through interactive context gathering:
 - **Step 0** — parses intent and explores codebase for relevant context
@@ -194,6 +195,8 @@ listen_on unix:/tmp/kitty-$KITTY_PID
 ```
 
 Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
+
+**plan-review agent** — automated plan quality reviewer. Analyzes plans for problem definition, solution correctness, scope creep, over-engineering, testing requirements, task granularity, and convention adherence. Used by the plan command's "Auto review" option. Outputs a structured report with severity-rated findings and an APPROVE/NEEDS REVISION verdict.
 
 ### release-tools
 
