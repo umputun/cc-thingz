@@ -1,7 +1,7 @@
 {
   "name": "review",
-  "description": "PR review with architecture analysis, scope creep detection, and writing style guide",
-  "version": "2.0.0",
+  "description": "PR review, interactive git diff annotation review, and writing style guide",
+  "version": "2.1.0",
   "author": {
     "name": "Umputun"
   },
