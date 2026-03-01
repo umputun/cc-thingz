@@ -107,14 +107,14 @@ def get_file_status(diff_args: list[str]) -> dict[str, str]:
         parts = line.split("\t", 1)
         if len(parts) == 2:
             code, name = parts
-            if code.startswith("R"):
-                # rename: status is like R100\told\tnew
-                rename_parts = line.split("\t")
-                if len(rename_parts) >= 3:
-                    name = rename_parts[2]
-                    statuses[name] = "renamed"
+            if code.startswith(("R", "C")):
+                # rename/copy: status is like R100\told\tnew or C100\told\tnew
+                multi_parts = line.split("\t")
+                if len(multi_parts) >= 3:
+                    name = multi_parts[2]
+                    statuses[name] = "renamed" if code.startswith("R") else "copied"
                     continue
-            status_map = {"A": "new", "M": "modified", "D": "deleted", "C": "copied"}
+            status_map = {"A": "new", "M": "modified", "D": "deleted"}
             statuses[name] = status_map.get(code[0], "changed")
     return statuses
 
@@ -312,6 +312,9 @@ def get_annotations(review_dir: Path) -> str:
 
 def run_review(base_ref: str | None = None) -> None:
     """main review flow: generate diff, open editor, return annotations."""
+    if not git_ok("rev-parse", "--is-inside-work-tree"):
+        print("error: not inside a git repository", file=sys.stderr)
+        sys.exit(1)
 
     # determine diff mode and args
     if base_ref:
@@ -322,9 +325,7 @@ def run_review(base_ref: str | None = None) -> None:
             diff_args = [f"{base_ref}...HEAD"]
         mode = "branch"
     elif has_uncommitted_changes():
-        diff_args = []  # git diff with no args = uncommitted unstaged
-        # include both staged and unstaged
-        diff_args = ["HEAD"]
+        diff_args = ["HEAD"]  # diff vs HEAD to include both staged and unstaged
         mode = "uncommitted"
     else:
         default_branch = detect_default_branch()
