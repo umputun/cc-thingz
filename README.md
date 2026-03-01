@@ -32,10 +32,12 @@ Copy the files you want to your Claude Code config directory manually.
 cp -r plugins/brainstorm/skills/do ~/.claude/skills/
 ```
 
-**review** — skills (review-pr + writing-style):
+**review** — skills (review-pr + git-review + writing-style):
 ```bash
 cp -r plugins/review/skills/pr ~/.claude/skills/
+cp -r plugins/review/skills/git-review ~/.claude/skills/
 cp -r plugins/review/skills/writing-style ~/.claude/skills/
+chmod +x ~/.claude/skills/git-review/scripts/git-review.py
 ```
 
 Note: update the `/review:writing-style` reference inside `pr/SKILL.md` to `/writing-style` when installed manually.
@@ -114,7 +116,7 @@ Restart Claude Code for changes to take effect.
 | Plugin | Description |
 |--------|-------------|
 | [brainstorm](#brainstorm) | Collaborative design dialogue — idea to approaches to design to plan |
-| [review](#review) | PR review with architecture analysis + writing style guide |
+| [review](#review) | PR review + interactive git diff annotation review + writing style guide |
 | [planning](#planning) | Structured implementation planning with interactive annotation review |
 | [release-tools](#release-tools) | Release workflow — auto-versioning, release notes, changelog |
 | [thinking-tools](#thinking-tools) | Analytical thinking — dialectic analysis, root cause investigation |
@@ -138,11 +140,12 @@ Guides a 4-phase dialogue to turn ideas into designs:
 
 ### review
 
-PR review and writing style tools. Install together — review-pr uses writing-style for drafting comments.
+PR review, interactive git diff annotation review, and writing style tools. Install together — review-pr uses writing-style for drafting comments.
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
 | skill | `/review:pr <number>` | PR review with architecture analysis, scope creep detection, and merge workflow |
+| skill | `/review:git-review [ref]` | Interactive git diff annotation review — editor overlay with feedback loop |
 | skill | `/review:writing-style` | Direct technical communication — anti-AI-speak, brevity, no filler |
 
 **review-pr** — analyzes code quality, architecture, test coverage, and identifies scope creep:
@@ -155,6 +158,10 @@ PR review and writing style tools. Install together — review-pr uses writing-s
 - **Post-approve** — recommends merge strategy (rebase vs squash vs merge)
 
 Uses `gh` CLI for all GitHub operations and git worktrees to avoid disrupting the current checkout.
+
+**git-review** — interactive annotation-based code review. Generates a cleaned-up diff, opens it in `$EDITOR` via tmux popup, kitty overlay, or wezterm split-pane. You annotate directly in the diff, and the script returns your changes as a git diff. Claude reads annotations, fixes code, regenerates the diff, and loops until you close the editor without changes. Supports auto-detection of uncommitted changes or branch diffs.
+
+Run tests: `python3 plugins/review/skills/git-review/scripts/git-review.py --test`
 
 **writing-style** — enforces direct, brief writing for tickets, PRs, code reviews, and commit messages. Core principles: brevity, honest feedback, problem-solution structure, technical precision, anti-AI-speak. Does NOT apply to README.md, public docs, or blog posts.
 

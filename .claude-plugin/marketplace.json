@@ -12,7 +12,7 @@
     {
       "name": "review",
       "source": "./plugins/review",
-      "description": "PR review with architecture analysis, scope creep detection, and writing style guide"
+      "description": "PR review, interactive git diff annotation review, and writing style guide"
     },
     {
       "name": "planning",
