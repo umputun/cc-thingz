@@ -74,6 +74,7 @@ chmod +x ~/.claude/skills/release/scripts/*.sh
 
 **thinking-tools** — skills:
 ```bash
+cp -r plugins/thinking-tools/skills/ask-codex ~/.claude/skills/
 cp -r plugins/thinking-tools/skills/dialectic ~/.claude/skills/
 cp -r plugins/thinking-tools/skills/root-cause-investigator ~/.claude/skills/
 ```
@@ -119,7 +120,7 @@ Restart Claude Code for changes to take effect.
 | [review](#review) | PR review + interactive git diff annotation review + writing style guide |
 | [planning](#planning) | Structured implementation planning with interactive annotation review |
 | [release-tools](#release-tools) | Release workflow — auto-versioning, release notes, changelog |
-| [thinking-tools](#thinking-tools) | Analytical thinking — dialectic analysis, root cause investigation |
+| [thinking-tools](#thinking-tools) | Analytical thinking — dialectic analysis, root cause investigation, codex consultation |
 | [skill-eval](#skill-eval) | Forces skill evaluation before every response |
 | [workflow](#workflow) | Session helpers — knowledge capture, confusion handling, clipboard copy |
 
@@ -217,8 +218,11 @@ Analytical thinking tools for objective analysis.
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
+| skill | `/thinking-tools:ask-codex` | Consult OpenAI Codex (GPT-5) for investigation, debugging, or code review |
 | skill | `/thinking-tools:dialectic <statement>` | Prove and counter-prove a statement using parallel agents |
 | skill | `/thinking-tools:root-cause-investigator` | Systematic 5-Why root cause analysis for errors and bugs |
+
+**ask-codex** — consults OpenAI Codex (GPT-5) as a second opinion for debugging, investigation, or code review. Builds a focused prompt from conversation context, runs codex in read-only sandbox mode in the background, and presents findings with an independent assessment. Requires `codex` CLI to be installed and authenticated.
 
 **dialectic** — runs two agents in parallel with opposing goals (thesis vs antithesis) to eliminate confirmation bias. One agent finds all positive evidence, the other finds all negative evidence. After both complete, synthesizes findings into an objective conclusion and verifies cited evidence against actual code.
 
