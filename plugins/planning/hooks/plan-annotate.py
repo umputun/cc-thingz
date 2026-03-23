@@ -107,12 +107,21 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
     when target_window is True (hook mode), targets the kitty window from KITTY_WINDOW_ID.
     when False (file mode), opens in the currently focused window."""
     editor = os.environ.get("EDITOR", "micro")
+    # resolve the first token of $EDITOR to an absolute path so that
+    # sh -c (used by kitty/wezterm overlays) can find the binary even
+    # when /opt/homebrew/bin or similar dirs are not in sh's default PATH.
+    editor_parts = shlex.split(editor)
+    resolved = shutil.which(editor_parts[0])
+    if resolved:
+        editor_parts[0] = resolved
+    editor_cmd = " ".join(shlex.quote(p) for p in editor_parts)
 
     # tmux: display-popup -E blocks until the command exits, no sentinel needed
     if os.environ.get("TMUX") and shutil.which("tmux"):
         result = subprocess.run(
             ["tmux", "display-popup", "-E", "-w", "90%", "-h", "90%",
-             "-T", "Plan Review", "--", editor, str(filepath)],
+             "-T", "Plan Review", "--", "sh", "-c",
+             f'{editor_cmd} {shlex.quote(str(filepath))}'],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         return result.returncode
@@ -127,7 +136,7 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         cmd = ["kitty", "@", "--to", kitty_sock, "launch", "--type=overlay",
                f"--title=Plan Review: {filepath.name}"]
         # in hook mode, target claude's window; in file mode, use focused window
@@ -149,7 +158,7 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         subprocess.run(
             ["wezterm", "cli", "split-pane", "--bottom", "--percent", "80",
              "--pane-id", wezterm_pane, "--", "sh", "-c", wrapper],
