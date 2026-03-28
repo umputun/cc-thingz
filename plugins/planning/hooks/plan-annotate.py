@@ -43,7 +43,7 @@ limitations:
     file on disk - if you edit the file on disk separately, those changes
     won't be seen by this hook
 
-file mode (for /action:plan integration):
+file mode (for /planning:make integration):
 
     plan-annotate.py docs/plans/foo.md
 
