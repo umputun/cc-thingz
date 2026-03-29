@@ -1,11 +1,49 @@
 {
   "name": "planning",
-  "description": "Structured implementation planning with interactive annotation review",
-  "version": "2.1.2",
+  "description": "Structured implementation planning, interactive annotation review, and autonomous plan execution",
+  "version": "3.0.0",
   "author": {
     "name": "Umputun"
   },
   "homepage": "https://github.com/umputun/cc-thingz",
   "repository": "https://github.com/umputun/cc-thingz",
-  "license": "MIT"
+  "license": "MIT",
+  "userConfig": {
+    "external_review_cmd": {
+      "title": "External review command",
+      "type": "string",
+      "description": "Command for external code review tool. Leave empty to auto-detect codex.",
+      "default": ""
+    },
+    "task_retries": {
+      "title": "Task retries",
+      "type": "number",
+      "description": "Number of retries for failed tasks before stopping.",
+      "default": 1
+    },
+    "review_iterations": {
+      "title": "Review iterations",
+      "type": "number",
+      "description": "Max fix-and-recheck cycles during internal review.",
+      "default": 5
+    },
+    "external_review_iterations": {
+      "title": "External review iterations",
+      "type": "number",
+      "description": "Max iterations for external review adversarial loop.",
+      "default": 10
+    },
+    "finalize_enabled": {
+      "title": "Enable finalize",
+      "type": "boolean",
+      "description": "Whether to run the finalize phase (rebase and squash commits).",
+      "default": true
+    },
+    "plans_dir": {
+      "title": "Plans directory",
+      "type": "string",
+      "description": "Directory where plan files are located, relative to project root.",
+      "default": "docs/plans"
+    }
+  }
 }
