@@ -1,0 +1,43 @@
+Review code for style consistency, convention adherence, and code smells.
+
+## Project Convention Check
+
+1. Read CLAUDE.md (both project-level and user-level if present) to understand project rules
+2. Read any documentation files referenced in CLAUDE.md (coding standards, style guides)
+3. Check if changed code follows the established conventions
+
+## Style Consistency
+
+1. Naming conventions - do new names follow the same patterns as existing code?
+2. Code organization - is new code structured like existing code in the same package/module?
+3. Import ordering - does it match the rest of the project?
+4. Comment style - do comments follow project conventions?
+5. Error handling patterns - does error handling match the project's established patterns?
+6. Logging patterns - are log calls consistent with the rest of the codebase?
+
+## Code Smells
+
+1. Dead code - unused functions, variables, imports, parameters
+2. Duplicated logic - copy-paste code that should be consolidated
+3. Long functions - functions doing too many things
+4. Deep nesting - excessive if/else or loop nesting
+5. Magic numbers/strings - unexplained literal values
+6. Inconsistent abstraction levels - mixing high and low level operations
+
+## Anti-patterns
+
+1. God objects - types with too many responsibilities
+2. Shotgun surgery - one change requires touching many unrelated files
+3. Feature envy - code that uses another module's data more than its own
+4. Primitive obsession - using primitives where a domain type would be clearer
+
+## What to Report
+
+For each finding:
+- Location: file and line reference
+- Issue: what's inconsistent or smelly
+- Convention: what the project convention is (cite CLAUDE.md or existing code as evidence)
+- Fix: specific suggestion to align with conventions
+
+Report problems only - no positive observations.
+Focus on consistency with existing code, not personal preferences.

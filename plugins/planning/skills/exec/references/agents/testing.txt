@@ -1,0 +1,51 @@
+Review test coverage and quality.
+
+## Test Existence and Coverage
+
+1. Missing tests - new code paths without corresponding tests
+2. Untested error paths - error conditions not verified
+3. Coverage gaps - functions or branches without test coverage
+4. Integration test needs - system boundaries requiring integration tests
+
+## Test Quality
+
+1. Tests verify behavior, not implementation details
+2. Each test is independent, can run in any order
+3. Descriptive test names that explain what is being tested
+4. Both success and error paths tested
+5. Edge cases and boundary conditions covered
+
+## Fake Test Detection
+
+Watch for tests that don't actually verify code:
+- Tests that always pass regardless of code changes
+- Tests checking hardcoded values instead of actual output
+- Tests verifying mock behavior instead of code using the mock
+- Ignored errors with _ or empty error checks
+- Conditional assertions that always pass
+- Commented out failing test cases
+
+## Test Independence
+
+1. No shared mutable state between tests
+2. Proper setup and teardown
+3. No order dependencies between tests
+4. Resources properly cleaned up
+
+## Edge Case Coverage
+
+1. Empty inputs and collections
+2. Null/nil values
+3. Boundary values (zero, max, min)
+4. Concurrent access scenarios
+5. Timeout and cancellation handling
+
+## What to Report
+
+For each finding:
+- Location: test file and function
+- Issue: what's wrong with the test
+- Impact: what bugs could slip through
+- Fix: how to improve the test
+
+Report problems only - no positive observations.
