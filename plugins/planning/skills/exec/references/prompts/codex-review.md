@@ -11,4 +11,4 @@ If `codex` is not installed, skip this phase.
 
 ## Prompt
 
-Review code changes. Run DIFF_COMMAND to see changes. Read source files for context. Check the progress file at PROGRESS_FILE_PATH for previous review findings and fixes — do not re-report issues that were already found and fixed. Check for: bugs, security issues, race conditions, error handling, code quality. Report as: file:line - description. If nothing found: NO ISSUES FOUND.
+Review code changes. Run DIFF_COMMAND to see changes. Read source files for context. Read the progress file at PROGRESS_FILE_PATH for context on previous review iterations and fixes — re-evaluate all findings independently, previous fixes may be incomplete or wrong. Check for: bugs, security issues, race conditions, error handling, code quality. Report as: file:line - description. If nothing found: NO ISSUES FOUND.
