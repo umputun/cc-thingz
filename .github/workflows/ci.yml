@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate YAML frontmatter in markdown files
+        run: |
+          python3 -c "
+          import yaml, sys, os
+
+          failed = False
+          for root, dirs, files in os.walk('.'):
+              if '.git' in root:
+                  continue
+              for f in files:
+                  if not f.endswith('.md'):
+                      continue
+                  path = os.path.join(root, f)
+                  with open(path) as fh:
+                      content = fh.read()
+                  if not content.startswith('---\n'):
+                      continue
+                  end = content.find('\n---\n', 4)
+                  if end == -1:
+                      continue
+                  frontmatter = content[4:end]
+                  try:
+                      yaml.safe_load(frontmatter)
+                  except yaml.YAMLError as e:
+                      print(f'FAIL: {path}')
+                      print(f'  {e}')
+                      failed = True
+
+          if failed:
+              sys.exit(1)
+          print('All markdown frontmatter is valid YAML')
+          "
+
+      - name: ShellCheck
+        run: |
+          find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck

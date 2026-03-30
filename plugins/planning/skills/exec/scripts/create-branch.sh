@@ -49,6 +49,7 @@ fi
 branch_name=$(basename "$plan_file" .md)
 
 # strip leading date prefix if present (YYYYMMDD- or YYYY-MM-DD-)
+# shellcheck disable=SC2001 # regex too complex for ${var//pattern}
 branch_name=$(echo "$branch_name" | sed 's/^[0-9]\{4\}-\{0,1\}[0-9]\{2\}-\{0,1\}[0-9]\{2\}-//')
 
 # check if branch already exists

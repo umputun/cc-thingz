@@ -29,7 +29,7 @@ features=$(mktemp)
 improvements=$(mktemp)
 fixes=$(mktemp)
 other=$(mktemp)
-trap "rm -f $features $improvements $fixes $other" EXIT
+trap 'rm -f "$features" "$improvements" "$fixes" "$other"' EXIT
 
 # categorize entry by conventional commit prefix
 # usage: categorize "description" "suffix"
@@ -37,10 +37,12 @@ trap "rm -f $features $improvements $fixes $other" EXIT
 categorize() {
     local desc="$1"
     local suffix="$2"
-    local lower_desc=$(echo "$desc" | tr '[:upper:]' '[:lower:]')
+    local lower_desc
+    lower_desc=$(echo "$desc" | tr '[:upper:]' '[:lower:]')
 
     # strip conventional prefix for cleaner output
-    local clean_desc=$(echo "$desc" | sed -E 's/^(feat|fix|refactor|perf|chore|docs|style|build|ci|test)(\([^)]*\))?[[:space:]]*:[[:space:]]*//')
+    local clean_desc
+    clean_desc=$(echo "$desc" | sed -E 's/^(feat|fix|refactor|perf|chore|docs|style|build|ci|test)(\([^)]*\))?[[:space:]]*:[[:space:]]*//')
 
     # format: "- description suffix"
     local entry="- ${clean_desc} ${suffix}"
