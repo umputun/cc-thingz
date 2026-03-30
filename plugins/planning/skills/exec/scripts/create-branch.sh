@@ -17,11 +17,6 @@ fi
 
 current_branch=$(git branch --show-current)
 
-# handle detached HEAD — treat as being on default branch
-if [ -z "$current_branch" ]; then
-    current_branch=""
-fi
-
 # detect the default branch using local-first fallback chain (avoids network calls that can hang)
 # 1. check cached remote HEAD (local, fast)
 default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')

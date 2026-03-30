@@ -13,7 +13,7 @@ fi
 
 codex exec \
   --sandbox read-only \
-  -c model="gpt-5.4" \
+  -c model="${CODEX_MODEL:-gpt-5.4}" \
   -c model_reasoning_effort="high" \
   -c stream_idle_timeout_ms=3600000 \
   -c project_doc="$HOME/.claude/CLAUDE.md" \

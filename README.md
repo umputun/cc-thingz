@@ -46,7 +46,6 @@ Note: update the `/review:writing-style` reference inside `pr/SKILL.md` to `/wri
 ```bash
 cp plugins/planning/commands/make.md ~/.claude/commands/
 cp -r plugins/planning/skills/exec ~/.claude/skills/
-cp -r plugins/planning/scripts ~/.claude/skills/exec/scripts
 cp plugins/planning/hooks/plan-annotate.py ~/.claude/scripts/
 chmod +x ~/.claude/scripts/plan-annotate.py
 chmod +x ~/.claude/skills/exec/scripts/*.sh

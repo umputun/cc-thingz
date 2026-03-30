@@ -109,9 +109,9 @@ Maximum iterations safety limit: 50. If reached, stop and report to user.
 
 After all tasks complete, run a comprehensive code review.
 
-Report to user: "--- Review phase 1: comprehensive (single pass) ---"
+Report to user: "--- Review phase 1: comprehensive ---"
 
-Run once (no loop):
+Loop up to `review_iterations` times (userConfig, default: 5):
 
 1. **Spawn a review agent** — resolve `prompts/review.md` through the override chain. Launch one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the resolved prompt with `REVIEW_PHASE` set to `comprehensive`. Replace `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, and `${CLAUDE_PLUGIN_ROOT}`. The review agent launches 5 agents in parallel, collects findings, and reports back.
 
@@ -123,7 +123,9 @@ Run once (no loop):
 
 4. **Spawn a fixer agent** — resolve `prompts/fixer.md` through the override chain. Launch with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`. Pass the FULL unedited review output as FINDINGS_LIST — the fixer decides what's real, not you.
 
-5. **After fixer returns** → show the "FIXES:" section to the user. Report "Review phase 1: fixes applied". Do NOT loop — this phase runs once only.
+5. **After fixer returns** → show the "FIXES:" section to the user. Report "Review phase 1: iteration N fixes applied". Loop back to step 1.
+
+If `review_iterations` reached with issues still found, report "Review phase 1: max iterations reached, moving on" and continue.
 
 ### Step 8. Review phase 2 — code smells
 
@@ -131,7 +133,7 @@ Report to user: "--- Review phase 2: code smells analysis ---"
 
 Run once (no loop):
 
-1. **Spawn a smells agent** — resolve `agents/smells.txt` through the override chain. Launch one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the resolved agent prompt. Replace `DEFAULT_BRANCH` with the actual base branch name.
+1. **Spawn a smells agent** — resolve `agents/smells.txt` through the override chain. Launch one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the resolved agent prompt.
 
 2. **Collect findings** — after the agent returns, report to user with a compact list of findings (one line per finding). Log findings to progress file:
    `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh <progress-file> "review phase 2 smells: findings"`
@@ -139,7 +141,7 @@ Run once (no loop):
 
 3. **If no issues found** → report "Smells analysis: clean" and proceed to the next phase.
 
-4. **Spawn a fixer agent** — launch one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the prompt from `prompts/fixer.md`. Pass the FULL smells output as FINDINGS_LIST.
+4. **Spawn a fixer agent** — resolve `prompts/fixer.md` through the override chain. Launch with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`. Pass the FULL smells output as FINDINGS_LIST.
 
 5. **After fixer returns** → report fixes to user. Proceed to the next phase.
 
