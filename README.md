@@ -42,12 +42,17 @@ chmod +x ~/.claude/skills/git-review/scripts/git-review.py
 
 Note: update the `/review:writing-style` reference inside `pr/SKILL.md` to `/writing-style` when installed manually.
 
-**planning** — command + hook:
+**planning** — command + exec skill + hook:
 ```bash
 cp plugins/planning/commands/make.md ~/.claude/commands/
+cp -r plugins/planning/skills/exec ~/.claude/skills/
+cp -r plugins/planning/scripts ~/.claude/skills/exec/scripts
 cp plugins/planning/hooks/plan-annotate.py ~/.claude/scripts/
 chmod +x ~/.claude/scripts/plan-annotate.py
+chmod +x ~/.claude/skills/exec/scripts/*.sh
 ```
+
+Note: when installed manually, update `${CLAUDE_PLUGIN_ROOT}` references inside `exec/SKILL.md` and prompt files to use `~/.claude/skills/exec` instead.
 
 Add the plan-annotate hook to `~/.claude/settings.json`:
 ```json
@@ -118,7 +123,7 @@ Restart Claude Code for changes to take effect.
 |--------|-------------|
 | [brainstorm](#brainstorm) | Collaborative design dialogue — idea to approaches to design to plan |
 | [review](#review) | PR review + interactive git diff annotation review + writing style guide |
-| [planning](#planning) | Structured implementation planning with interactive annotation review |
+| [planning](#planning) | Structured implementation planning, interactive annotation review, and autonomous plan execution |
 | [release-tools](#release-tools) | Release workflow — auto-versioning, release notes, changelog |
 | [thinking-tools](#thinking-tools) | Analytical thinking — dialectic analysis, root cause investigation, codex consultation |
 | [skill-eval](#skill-eval) | Forces skill evaluation before every response |
@@ -168,11 +173,12 @@ Run tests: `python3 plugins/review/skills/git-review/scripts/git-review.py --tes
 
 ### planning
 
-Structured implementation planning with interactive annotation review.
+Structured implementation planning with interactive annotation review and autonomous plan execution.
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
 | command | `/planning:make <desc>` | Structured implementation plan with interactive review loop |
+| skill | `/planning:exec [plan-file]` | Autonomous plan executor — task loop, multi-phase review, optional finalize |
 | hook | `PreToolUse` / CLI | Plan annotation in `$EDITOR` with diff-based feedback loop |
 | agent | `plan-review` | Automated plan quality review — completeness, over-engineering, testing |
 
@@ -198,6 +204,46 @@ listen_on unix:/tmp/kitty-$KITTY_PID
 Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
 
 **plan-review agent** — automated plan quality reviewer. Analyzes plans for problem definition, solution correctness, scope creep, over-engineering, testing requirements, task granularity, and convention adherence. Used by the plan command's "Auto review" option. Outputs a structured report with severity-rated findings and an APPROVE/NEEDS REVISION verdict.
+
+**exec skill** — autonomous plan executor. Takes a plan file (from `/planning:make`) and executes it task-by-task using isolated subagents. Execution phases:
+
+1. **Task loop** — one subagent per task section, commits after each, retries on failure
+2. **Comprehensive review** — 5 parallel agents (quality, implementation, testing, simplification, documentation) + fixer
+3. **Code smells** — smells agent checks conventions, CLAUDE.md rules, code style + fixer
+4. **External review** — auto-detects `codex` CLI or uses custom command, adversarial loop
+5. **Critical-only review** — 2 agents (quality + implementation), critical/major issues only + fixer
+6. **Finalize** — rebase, squash, verify (optional)
+
+Review agents are read-only reporters. The fixer agent evaluates each finding, fixes confirmed issues, rejects false positives, and reports back.
+
+**Customization** — prompts and agent definitions use a three-layer override chain (checked in order, first match wins):
+1. Project: `.claude/exec-plan/prompts/` and `.claude/exec-plan/agents/`
+2. User: `${CLAUDE_PLUGIN_DATA}/prompts/` and `${CLAUDE_PLUGIN_DATA}/agents/`
+3. Bundled defaults (shipped with the plugin)
+
+To customize, place your modified version in the override path. For example, to customize `prompts/review.md` at the project level:
+```
+.claude/exec-plan/prompts/review.md
+```
+Or at the user level (applies to all projects). A `SessionStart` hook copies bundled defaults to `${CLAUDE_PLUGIN_DATA}` on first run — edit the copies there to customize. To find the directory, run `ls ~/.claude/plugins/data/` and look for the planning plugin entry:
+```
+~/.claude/plugins/data/<plugin-id>/prompts/review.md
+```
+Same pattern works for any prompt or agent file — just mirror the path under the override directory.
+
+Bundled prompts: `task.md`, `fixer.md`, `review.md`, `codex-review.md`, `finalizer.md`, `progress-file.md`
+Bundled agents: `quality.txt`, `implementation.txt`, `testing.txt`, `simplification.txt`, `documentation.txt`, `smells.txt`
+
+Configuration via `userConfig` (prompted at plugin install):
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `external_review_cmd` | *(empty — auto-detect codex)* | Command for external code review tool |
+| `task_retries` | `1` | Retries for failed tasks before stopping |
+| `review_iterations` | `5` | Max fix-and-recheck cycles during internal review |
+| `external_review_iterations` | `10` | Max iterations for external review adversarial loop |
+| `finalize_enabled` | `true` | Whether to run the finalize phase (rebase + squash) |
+| `plans_dir` | `docs/plans` | Directory where plan files are located |
 
 ### release-tools
 

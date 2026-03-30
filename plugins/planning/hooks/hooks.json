@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p \"${CLAUDE_PLUGIN_DATA}/prompts\" \"${CLAUDE_PLUGIN_DATA}/agents\" && for f in \"${CLAUDE_PLUGIN_ROOT}/skills/exec/references/prompts/\"*.md; do [ -f \"$f\" ] && bn=$(basename \"$f\") && [ ! -f \"${CLAUDE_PLUGIN_DATA}/prompts/$bn\" ] && cp \"$f\" \"${CLAUDE_PLUGIN_DATA}/prompts/$bn\"; done; for f in \"${CLAUDE_PLUGIN_ROOT}/skills/exec/references/agents/\"*.txt; do [ -f \"$f\" ] && bn=$(basename \"$f\") && [ ! -f \"${CLAUDE_PLUGIN_DATA}/agents/$bn\" ] && cp \"$f\" \"${CLAUDE_PLUGIN_DATA}/agents/$bn\"; done; true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "ExitPlanMode",
