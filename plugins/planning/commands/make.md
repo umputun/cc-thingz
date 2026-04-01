@@ -267,7 +267,7 @@ then use AskUserQuestion:
       {"label": "Auto review", "description": "Launch AI plan-review agent for automated analysis"},
       {"label": "Start implementation", "description": "Commit plan and begin implementing task by task (interactive, in this session)"},
       {"label": "Execute autonomously", "description": "Commit plan and run /planning:exec for autonomous execution with reviews"},
-      {"label": "Done", "description": "Commit plan to git, no further action"}
+      {"label": "Done", "description": "Commit plan, no further action"}
     ],
     "multiSelect": false
   }]

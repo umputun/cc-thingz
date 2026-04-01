@@ -50,5 +50,5 @@ Completed: <timestamp>
 ## How to pass it
 
 - Pass the progress file path to the fixer agent prompt — add it after the plan file reference
-- Review agents do NOT need the progress file (they look at git state)
+- Review agents do NOT need the progress file (they look at repository state)
 - The fixer uses it to understand what previous iterations found and fixed

@@ -251,11 +251,11 @@ Release workflow tools for creating versioned releases with auto-generated notes
 | Component | Trigger | Description |
 |-----------|---------|-------------|
 | skill | `/release-tools:new` | Create GitHub/GitLab/Gitea release with auto-versioning and release notes |
-| skill | `/release-tools:last-tag` | Show commits since the last git tag in a formatted table |
+| skill | `/release-tools:last-tag` | Show commits since the last tag in a formatted table |
 
 **release** — full release workflow: asks release type (hotfix/minor/major), auto-detects platform (GitHub/GitLab/Gitea), calculates semantic version, generates release notes grouped by type (features/improvements/fixes) from merged PRs and commits, updates CHANGELOG if present, shows preview for confirmation, then publishes. Includes helper scripts for platform detection, version calculation, and notes generation.
 
-**last-tag** — shows commits since the last git tag in a formatted table with date, author, hash, and description. Detects single vs multiple authors and adjusts table layout. Offers interactive drill-down into individual commit details.
+**last-tag** — shows commits since the last tag in a formatted table with date, author, hash, and description. Detects single vs multiple authors and adjusts table layout. Offers interactive drill-down into individual commit details.
 
 ### thinking-tools
 
