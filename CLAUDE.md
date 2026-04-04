@@ -34,6 +34,16 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
   - `plugins/workflow/` — session workflow helpers (learn, clarify, wrong, md-copy, txt-copy)
 - Each plugin has its own `.claude-plugin/plugin.json`, and standard subdirectories (`skills/`, `commands/`, `hooks/`) as needed.
 
+## Local Plugin Development
+
+- **Testing locally** — use `claude --plugin-dir plugins/<name>` to load a local plugin without publishing. Use `/reload-plugins` inside a session to pick up file changes without restarting.
+- **Updating marketplace cache** — plugin hooks and skills are read from `~/.claude/plugins/marketplaces/`, not `cache/`. When manually testing changes, copy files to the marketplace path.
+
+## Known Claude Code Limitations
+
+- **Plugin skill autocomplete** — skills defined in `skills/*/SKILL.md` don't appear in the `/` autocomplete dropdown, only commands in `commands/*.md` do. Skills are still invocable by typing the full name (e.g., `/planning:exec`) or via natural language intent matching.
+- **Plugin hook deny rendering** — PreToolUse hooks that return `permissionDecision: "deny"` display as "blocking error" with an ugly error prefix in the TUI. The same deny from a settings.json hook renders cleanly as a permission prompt. This is a Claude Code rendering issue, not fixable from the plugin side.
+
 ## Testing
 
-- Python scripts include embedded tests run via `--test` flag: `python3 plugins/planning/hooks/plan-annotate.py --test`
+- Python scripts include embedded tests run via `--test` flag: `python3 plugins/planning/scripts/plan-annotate.py --test`

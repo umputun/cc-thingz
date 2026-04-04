@@ -160,6 +160,16 @@ check `docs/plans/` for existing files, then create `docs/plans/yyyymmdd-<task-n
 - update plan if implementation deviates from original scope
 - keep plan in sync with actual work done
 
+## Solution Overview
+- high-level approach and architecture chosen
+- key design decisions and rationale
+- how it fits into the existing system
+
+## Technical Details
+- data structures and changes
+- parameters and formats
+- processing flow
+
 ## What Goes Where
 - **Implementation Steps** (`[ ]` checkboxes): tasks achievable within this codebase - code changes, tests, documentation updates
 - **Post-Completion** (no checkboxes): items requiring external action - manual testing, changes in consuming projects, deployment configs, third-party verifications
@@ -232,11 +242,6 @@ Example (NOTICE: Files block + tests as separate checklist items):
 - [ ] update CLAUDE.md if new patterns discovered
 - [ ] move this plan to `docs/plans/completed/`
 
-## Technical Details
-- data structures and changes
-- parameters and formats
-- processing flow
-
 ## Post-Completion
 *Items requiring manual intervention or external systems - no checkboxes, informational only*
 
@@ -274,16 +279,29 @@ then use AskUserQuestion:
 }
 ```
 
-- **Interactive review**: run `python3 $CLAUDE_PLUGIN_ROOT/scripts/plan-annotate.py <plan-file-path>` via Bash.
-  the script opens a copy of the plan in $EDITOR via kitty overlay. if the user makes annotations,
-  it outputs a unified diff to stdout. when diff output is present:
-  1. read the diff carefully — added lines (+) are user annotations, removed lines (-) are deletions, modified lines show requested changes
-  2. revise the plan file to address each annotation
-  3. run `python3 $CLAUDE_PLUGIN_ROOT/scripts/plan-annotate.py <plan-file-path>` again
-  4. repeat until no diff output (user closed editor without changes)
+- **Interactive review**: check if `revdiff` is installed (`which revdiff`).
+  - **if revdiff is available**: run `bash $CLAUDE_PLUGIN_ROOT/scripts/launch-plan-review.sh <plan-file-path>` via Bash.
+    the script opens revdiff TUI showing the plan with syntax highlighting. user adds line-level annotations.
+    on quit, annotations are output to stdout in structured format:
+    ```
+    ## filename:line ( )
+    annotation comment text
+    ```
+    when annotation output is present:
+    1. read each annotation — the line number and comment describe what the user wants changed
+    2. revise the plan file to address each annotation
+    3. run `bash $CLAUDE_PLUGIN_ROOT/scripts/launch-plan-review.sh <plan-file-path>` again
+    4. repeat until no output (user quit without annotations)
+  - **if revdiff is not available**: fall back to `python3 $CLAUDE_PLUGIN_ROOT/scripts/plan-annotate.py <plan-file-path>`.
+    the script opens a copy of the plan in $EDITOR via terminal overlay. if the user makes annotations,
+    it outputs a unified diff to stdout. when diff output is present:
+    1. read the diff carefully — added lines (+) are user annotations, removed lines (-) are deletions, modified lines show requested changes
+    2. revise the plan file to address each annotation
+    3. run `python3 $CLAUDE_PLUGIN_ROOT/scripts/plan-annotate.py <plan-file-path>` again
+    4. repeat until no diff output (user closed editor without changes)
   when the annotation loop completes, ask again with the remaining options (minus "Interactive review")
 - **Auto review**: launch plan-review agent (Task tool with subagent_type=plan-review). After review completes, ask again with the same options (minus "Auto review")
-- **Start implementation**: commit plan with message like "docs: add <topic> implementation plan", then begin implementing task 1 interactively in this session
+- **Start implementation**: commit plan with message like "docs: add <topic> implementation plan", then begin implementing task 1 interactively in this session. Use TodoWrite tool to track progress and mark todos completed immediately (do not batch)
 - **Execute autonomously**: commit plan, then invoke `/planning:exec <plan-file-path>` for autonomous execution with multi-phase review
 - **Done**: commit plan with message like "docs: add <topic> implementation plan", stop
 
