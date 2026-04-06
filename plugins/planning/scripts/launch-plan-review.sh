@@ -78,5 +78,84 @@ if [ -n "${WEZTERM_PANE:-}" ] && command -v wezterm >/dev/null 2>&1; then
     exit 0
 fi
 
-echo "error: no overlay terminal available (requires tmux, kitty, or wezterm)" >&2
+# cmux: split pane via cmux CLI (must precede ghostty — cmux also sets TERM_PROGRAM=ghostty)
+if [ -n "${CMUX_SURFACE_ID:-}" ] && command -v cmux >/dev/null 2>&1; then
+    SENTINEL=$(mktemp /tmp/plan-review-done-XXXXXX)
+    rm -f "$SENTINEL"
+
+    LAUNCH_SCRIPT=$(mktemp /tmp/plan-review-launch-XXXXXX)
+    trap 'rm -f "$OUTPUT_FILE" "$SENTINEL" "$LAUNCH_SCRIPT"' EXIT
+    cat > "$LAUNCH_SCRIPT" <<LAUNCHER
+#!/bin/sh
+$REVDIFF_CMD; touch '$SENTINEL'
+LAUNCHER
+    chmod +x "$LAUNCH_SCRIPT"
+
+    CMUX_NEW=$(cmux new-split down 2>&1) || true
+    CMUX_SURF=$(echo "$CMUX_NEW" | grep -o 'surface:[0-9]*' | head -1)
+
+    if [ -n "$CMUX_SURF" ]; then
+        cmux send --surface "$CMUX_SURF" "exec $LAUNCH_SCRIPT\n"
+    else
+        cmux send "exec $LAUNCH_SCRIPT\n"
+    fi
+
+    while [ ! -f "$SENTINEL" ]; do
+        sleep 0.3
+    done
+    if [ -n "$CMUX_SURF" ]; then
+        cmux close-surface --surface "$CMUX_SURF" 2>/dev/null || true
+    fi
+    rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
+    cat "$OUTPUT_FILE"
+    exit 0
+fi
+
+# ghostty: split pane via AppleScript (macOS only, requires Ghostty 1.3.0+)
+if [ "${TERM_PROGRAM:-}" = "ghostty" ] && command -v osascript >/dev/null 2>&1; then
+    SENTINEL=$(mktemp /tmp/plan-review-done-XXXXXX)
+    rm -f "$SENTINEL"
+
+    LAUNCH_SCRIPT=$(mktemp /tmp/plan-review-launch-XXXXXX)
+    trap 'rm -f "$OUTPUT_FILE" "$SENTINEL" "$LAUNCH_SCRIPT"' EXIT
+    cat > "$LAUNCH_SCRIPT" <<LAUNCHER
+#!/bin/sh
+$REVDIFF_CMD; touch '$SENTINEL'
+LAUNCHER
+    chmod +x "$LAUNCH_SCRIPT"
+
+    GHOSTTY_TERM_ID=$(osascript - "$LAUNCH_SCRIPT" <<'APPLESCRIPT'
+on run argv
+    set launchScript to item 1 of argv
+    tell application "Ghostty"
+        set cfg to new surface configuration
+        set command of cfg to launchScript
+        set wait after command of cfg to false
+        set ft to focused terminal of selected tab of front window
+        set newTerm to split ft direction down with configuration cfg
+        perform action "toggle_split_zoom" on newTerm
+        return id of newTerm
+    end tell
+end run
+APPLESCRIPT
+    )
+    if [ $? -ne 0 ]; then
+        rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
+        exit 1
+    fi
+
+    while [ ! -f "$SENTINEL" ]; do
+        sleep 0.3
+    done
+    osascript - "$GHOSTTY_TERM_ID" <<'APPLESCRIPT' 2>/dev/null
+on run argv
+    tell application "Ghostty" to close terminal id (item 1 of argv)
+end run
+APPLESCRIPT
+    rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
+    cat "$OUTPUT_FILE"
+    exit 0
+fi
+
+echo "error: no overlay terminal available (requires tmux, kitty, wezterm, cmux, or ghostty)" >&2
 exit 1
