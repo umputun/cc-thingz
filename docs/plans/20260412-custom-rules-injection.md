@@ -128,10 +128,10 @@
 **Files:**
 - Modify: `plugins/planning/agents/plan-review.md`
 
-- [ ] add `Bash` to the agent's `tools` list in frontmatter (currently only has `Read, Glob, Grep`)
-- [ ] add LLM-invoked bash instructions telling Claude to run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md` and apply non-empty output as additional rules context
-- [ ] add instruction to apply user rules when reviewing plan quality, conventions, and testing approach
-- [ ] verify: create sample rules file, confirm plan-review agent sees and applies rules
+- [x] add `Bash` to the agent's `tools` list in frontmatter (currently only has `Read, Glob, Grep`)
+- [x] add LLM-invoked bash instructions telling Claude to run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md` and apply non-empty output as additional rules context
+- [x] add instruction to apply user rules when reviewing plan quality, conventions, and testing approach
+- [x] verify: create sample rules file, confirm plan-review agent sees and applies rules
 
 ### Task 6: Add rules injection to planning:exec skill
 
