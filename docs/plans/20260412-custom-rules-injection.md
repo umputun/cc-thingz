@@ -90,9 +90,9 @@
 **Files:**
 - Create: `plugins/planning/scripts/resolve-rules.sh`
 
-- [ ] create `plugins/planning/scripts/resolve-rules.sh` with behavior: takes filename arg, checks `.claude/<filename>` first, then `$CLAUDE_PLUGIN_DATA/<filename>`, outputs first found file content to stdout, exit 0 always (empty output if no file found), first-found-wins (not merged), raw content without wrapping
-- [ ] make script executable (`chmod +x`)
-- [ ] verify script works: create temp `.claude/planning-rules.md`, run script, confirm output; remove file, confirm empty output
+- [x] create `plugins/planning/scripts/resolve-rules.sh` with behavior: takes filename arg, checks `.claude/<filename>` first, then `$CLAUDE_PLUGIN_DATA/<filename>`, outputs first found file content to stdout, exit 0 always (empty output if no file found), first-found-wins (not merged), raw content without wrapping
+- [x] make script executable (`chmod +x`)
+- [x] verify script works: create temp `.claude/planning-rules.md`, run script, confirm output; remove file, confirm empty output
 
 ### Task 2: Create resolve-rules.sh for brainstorm plugin
 
