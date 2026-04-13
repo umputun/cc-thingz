@@ -316,6 +316,42 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 
 **txt-copy** — copies generated text (emails, messages, letters) to clipboard via a timestamped temp file. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
 
+## Custom Rules
+
+Both the **planning** and **brainstorm** plugins support custom rules injection — free-form markdown files loaded at skill invocation time and applied as additional instructions alongside built-in behavior.
+
+**Two levels**, checked in order (first-found-wins, never merged):
+
+1. **Project-level**: `.claude/<rules-file>.md` in the current working directory
+2. **User-level**: `$CLAUDE_PLUGIN_DATA/<rules-file>.md` (per-plugin persistent storage)
+
+When both files exist, only the project-level file is used.
+
+| Plugin | Rules file | Affects |
+|--------|-----------|---------|
+| planning | `planning-rules.md` | make, exec, plan-review |
+| brainstorm | `brainstorm-rules.md` | brainstorm skill |
+
+**Example** — create `.claude/planning-rules.md` in your project:
+
+```markdown
+## testing conventions
+- use table-driven tests with testify
+- mock external dependencies with moq
+- aim for 80% coverage minimum
+
+## plan structure preferences
+- max 5 checkboxes per task
+- always include rollback steps for migrations
+```
+
+**Managing rules** — ask any skill to add, show, or clear rules at either level:
+
+- "show my planning rules" — displays current rules and which level they came from
+- "add Go testing rules to project-level planning rules" — writes to `.claude/planning-rules.md`
+- "set up brainstorm rules from my-conventions.md" — reads file and writes to rules location
+- "clear user-level brainstorm rules" — deletes `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`
+
 ## Credits
 
 Some skills and scripts were influenced by or adapted from community ideas, blog posts, and open-source examples. Sources were not tracked accurately from the start. If you recognize your work and want proper attribution, please [open an issue](https://github.com/umputun/cc-thingz/issues) — I'll fix it.

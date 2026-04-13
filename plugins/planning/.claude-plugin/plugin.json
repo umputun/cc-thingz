@@ -1,7 +1,7 @@
 {
   "name": "planning",
   "description": "Structured implementation planning, interactive annotation review, and autonomous plan execution",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "author": {
     "name": "Umputun"
   },

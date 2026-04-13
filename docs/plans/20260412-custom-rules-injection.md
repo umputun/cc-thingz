@@ -177,9 +177,9 @@
 - Modify: `plugins/planning/.claude-plugin/plugin.json`
 - Modify: `plugins/brainstorm/.claude-plugin/plugin.json`
 
-- [ ] add "Custom Rules" section to README explaining the mechanism, file locations, resolution order, and example usage for both plugins
-- [ ] bump planning plugin version (minor: new feature)
-- [ ] bump brainstorm plugin version (minor: new feature)
+- [x] add "Custom Rules" section to README explaining the mechanism, file locations, resolution order, and example usage for both plugins
+- [x] bump planning plugin version (minor: new feature)
+- [x] bump brainstorm plugin version (minor: new feature)
 
 ### Task 11: [Final] Update documentation
 - [ ] update CLAUDE.md if new patterns discovered
