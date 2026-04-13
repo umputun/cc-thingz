@@ -47,3 +47,11 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
 ## Testing
 
 - Python scripts include embedded tests run via `--test` flag: `python3 plugins/planning/scripts/plan-annotate.py --test`
+- Shell scripts have standalone test scripts: `bash plugins/planning/scripts/test-resolve-rules.sh`
+
+## Custom Rules Injection
+
+- Plugins can support user-provided custom rules via `resolve-rules.sh` scripts in `plugins/<name>/scripts/`
+- Resolution chain: `.claude/<rules-file>` (project) → `$CLAUDE_PLUGIN_DATA/<rules-file>` (user), first-found-wins, never merged
+- Skills/commands load rules via LLM-invoked bash (`bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh <filename>`) and apply as additional instructions
+- Reference docs for each plugin's rules mechanism live in `plugins/<name>/references/custom-rules.md`

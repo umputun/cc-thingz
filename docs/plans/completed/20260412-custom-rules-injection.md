@@ -9,8 +9,8 @@
 **Acceptance criteria**:
 - Users can manually create `.claude/planning-rules.md` (project) or `$CLAUDE_PLUGIN_DATA/planning-rules.md` (user-level) and see their content applied as additional prompt instructions when invoking make, exec, plan-review, or brainstorm
 - Same for brainstorm with `.claude/brainstorm-rules.md` and `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`
-- Users can ask any skill to create/update rules interactively (e.g., "add my Go rules to user-level planning rules", "set up brainstorm rules from my-conventions.md")
-- Users can ask any skill to show or clear existing rules at either level
+- Users can ask the make command or brainstorm skill to create/update rules interactively (e.g., "add my Go rules to user-level planning rules", "set up brainstorm rules from my-conventions.md")
+- Users can ask the make command or brainstorm skill to show or clear existing rules at either level (exec loads rules but management is done through make or brainstorm)
 - Project-level rules take precedence over user-level rules (first-found-wins)
 
 ## Context (from discovery)
@@ -36,7 +36,7 @@
 - **automated tests**: `test-resolve-rules.sh` script exercising resolution chain: (1) no files present, (2) only project file, (3) only user file, (4) both files — project wins (first-found-wins, NOT merged), (5) empty file
 - **regression**: `plan-annotate.py --test` for existing functionality
 - **manual verification**: create sample rules files, invoke each skill, verify rules appear in context
-- **"both levels" semantics**: first-found-wins — when both project and user files exist, only project-level content is output. Files are never merged or concatenated.
+- **"both levels" semantics**: first-found-wins — when both non-empty project and user files exist, only project-level content is output. Empty files are treated as absent. Files are never merged or concatenated.
 
 ## Progress Tracking
 - mark completed items with `[x]` immediately when done
@@ -61,7 +61,7 @@
 2. `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md` (user override)
 3. Nothing (no bundled default)
 
-**Semantics**: first-found-wins. When both levels exist, only the project-level file content is output. Files are never merged.
+**Semantics**: first-found-wins. When both non-empty files exist, only the project-level file content is output. Empty files are treated as absent. Files are never merged.
 
 ## Technical Details
 - `resolve-rules.sh` takes a filename argument (e.g., `planning-rules.md` or `brainstorm-rules.md`)
@@ -182,8 +182,8 @@
 - [x] bump brainstorm plugin version (minor: new feature)
 
 ### Task 11: [Final] Update documentation
-- [ ] update CLAUDE.md if new patterns discovered
-- [ ] move this plan to `docs/plans/completed/`
+- [x] update CLAUDE.md if new patterns discovered
+- [x] move this plan to `docs/plans/completed/`
 
 ## Post-Completion
 

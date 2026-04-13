@@ -35,7 +35,7 @@ Before starting execution, run this command via Bash tool to check for user-prov
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md
 ```
 
-If the output is non-empty, store it as the resolved custom rules content. This content will be substituted into the `USER_RULES` placeholder in task prompts so that each subagent receives the same custom rules. If the output is empty, substitute an empty string for `USER_RULES`. See `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
+If the output is non-empty, store it as the resolved custom rules content. When substituting `USER_RULES` in task prompts, wrap the content with a label so the subagent understands it: use "ADDITIONAL CUSTOM RULES:\n<content>" as the substitution. If the output is empty, substitute an empty string for `USER_RULES`. See `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
 
 ## Process
 
@@ -109,7 +109,7 @@ Repeat until no `[ ]` checkboxes remain in any Task section:
 5. **Spawn a subagent** using Agent tool with:
    - `mode: "bypassPermissions"`
    - `subagent_type: "general-purpose"`
-   - The task prompt from `prompts/task.md`, with `PLAN_FILE_PATH` and `PROGRESS_FILE_PATH` replaced by actual paths
+   - The task prompt from `prompts/task.md`, with all placeholders substituted as described in the Placeholder Substitution section above (including `USER_RULES`)
 6. **After subagent returns**, re-read the plan file and check if that task's checkboxes are now `[x]`
    - If yes — task succeeded, continue loop
    - If no — **retry** with a fresh subagent for the same task up to `task_retries` times (userConfig, default: 1). If all retries fail, stop and report failure to user

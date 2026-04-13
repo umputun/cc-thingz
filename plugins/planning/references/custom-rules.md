@@ -9,7 +9,7 @@ Two levels, checked in order (first-found-wins, never merged):
 1. **Project-level**: `.claude/planning-rules.md` in the current working directory
 2. **User-level**: `$CLAUDE_PLUGIN_DATA/planning-rules.md` (per-plugin persistent storage)
 
-When both files exist, only the project-level file is used.
+When both non-empty files exist, only the project-level file is used. Empty files are treated as absent and fall through to the next level.
 
 ## Resolution
 
@@ -17,7 +17,7 @@ Each skill runs `resolve-rules.sh planning-rules.md` via Bash at startup. The sc
 
 ## Managing Rules
 
-Ask any planning skill (make, exec, brainstorm) to manage rules:
+Ask the make command to manage rules:
 
 - **show rules** — displays current rules and which level they came from
 - **add/update project rules** — writes to `.claude/planning-rules.md`

@@ -9,7 +9,7 @@ Two levels, checked in order (first-found-wins, never merged):
 1. **Project-level**: `.claude/brainstorm-rules.md` in the current working directory
 2. **User-level**: `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md` (per-plugin persistent storage)
 
-When both files exist, only the project-level file is used.
+When both non-empty files exist, only the project-level file is used. Empty files are treated as absent and fall through to the next level.
 
 ## Resolution
 
