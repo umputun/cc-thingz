@@ -139,10 +139,10 @@
 - Modify: `plugins/planning/skills/exec/SKILL.md`
 - Modify: `plugins/planning/skills/exec/references/prompts/task.md`
 
-- [ ] add LLM-invoked bash instructions in exec SKILL.md to run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md` and apply non-empty output as additional rules
-- [ ] add `USER_RULES` placeholder to `references/prompts/task.md` so rules propagate to task subagents
-- [ ] add `USER_RULES` to the placeholder substitution list in SKILL.md (alongside PLAN_FILE_PATH, etc.)
-- [ ] verify: create sample rules file, confirm exec skill loads rules and task prompt includes them
+- [x] add LLM-invoked bash instructions in exec SKILL.md to run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md` and apply non-empty output as additional rules
+- [x] add `USER_RULES` placeholder to `references/prompts/task.md` so rules propagate to task subagents
+- [x] add `USER_RULES` to the placeholder substitution list in SKILL.md (alongside PLAN_FILE_PATH, etc.)
+- [x] verify: create sample rules file, confirm exec skill loads rules and task prompt includes them
 
 ### Task 7: Add rules injection to brainstorm skill
 

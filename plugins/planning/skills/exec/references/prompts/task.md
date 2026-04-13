@@ -12,6 +12,8 @@ A Task section is a "### Task N:" or "### Iteration N:" header with all its chec
 Complete ALL checkboxes in that section, then STOP.
 Do NOT continue to the next section.
 
+USER_RULES
+
 STEP 1 - IMPLEMENT:
 - Read the plan's Overview and Context sections to understand the work
 - Implement ALL items in the current Task section (all [ ] checkboxes under it)
