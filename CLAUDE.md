@@ -47,7 +47,7 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
 ## Testing
 
 - Python scripts include embedded tests run via `--test` flag: `python3 plugins/planning/scripts/plan-annotate.py --test`
-- Shell scripts have standalone test scripts: `bash plugins/planning/scripts/test-resolve-rules.sh`
+- Shell test scripts live in `tests/`: `bash tests/test-planning-resolve-rules.sh`, `bash tests/test-brainstorm-resolve-rules.sh`
 
 ## Custom Rules Injection
 

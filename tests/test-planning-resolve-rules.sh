@@ -5,7 +5,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-RESOLVE_SCRIPT="$SCRIPT_DIR/resolve-rules.sh"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+RESOLVE_SCRIPT="$REPO_ROOT/plugins/planning/scripts/resolve-rules.sh"
 TEST_FILENAME="test-rules.md"
 
 passed=0
@@ -14,6 +15,17 @@ failed=0
 # setup temp working directory to avoid polluting the real working directory
 WORK_DIR="$(mktemp -d)"
 USER_DIR="$(mktemp -d)"
+
+# safety: verify dirs are under /tmp or $TMPDIR before allowing any rm operations
+assert_temp_dir() {
+    local dir="$1"
+    local tmpbase="${TMPDIR:-/tmp}"
+    tmpbase="${tmpbase%/}"
+    case "$dir" in "$tmpbase"/*) ;; *) echo "FATAL: $dir is not under $tmpbase, refusing to proceed" >&2; exit 1;; esac
+}
+assert_temp_dir "$WORK_DIR"
+assert_temp_dir "$USER_DIR"
+
 cleanup() { rm -rf "$WORK_DIR" "$USER_DIR"; }
 trap cleanup EXIT
 
@@ -51,13 +63,14 @@ assert_empty() {
     fi
 }
 
-echo "testing resolve-rules.sh (brainstorm)"
-echo "======================================"
+echo "testing resolve-rules.sh"
+echo "========================"
 
 # test 1: no files present - empty output
 echo ""
 echo "test 1: no files present"
-rm -rf "$WORK_DIR/.claude" "$USER_DIR/$TEST_FILENAME"
+rm -rf "$WORK_DIR/.claude"
+rm -f "${USER_DIR:?}/$TEST_FILENAME"
 output="$(run_resolve)"
 assert_empty "no files produces empty output" "$output"
 
@@ -135,7 +148,7 @@ rm -rf "$WORK_DIR/.claude"
 
 # summary
 echo ""
-echo "======================================"
+echo "========================"
 echo "results: $passed passed, $failed failed"
 
 if [ "$failed" -gt 0 ]; then

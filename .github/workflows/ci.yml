@@ -47,3 +47,12 @@ jobs:
       - name: ShellCheck
         run: |
           find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck
+
+      - name: Run shell tests
+        run: |
+          for t in tests/test-*.sh; do bash "$t"; done
+
+      - name: Run python tests
+        run: |
+          python3 plugins/planning/scripts/plan-annotate.py --test
+          python3 plugins/review/skills/git-review/scripts/git-review.py --test
