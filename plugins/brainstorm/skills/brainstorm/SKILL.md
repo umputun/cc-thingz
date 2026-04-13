@@ -1,7 +1,7 @@
 ---
 name: brainstorm
 description: Use before any creative work or significant changes. Activates on "brainstorm", "let's brainstorm", "deep analysis", "analyze this feature", "think through", "help me design", "explore options for", or when user asks for thorough analysis of changes, features, or architectural decisions. Guides collaborative dialogue to turn ideas into designs through one-at-a-time questions, approach exploration, and incremental validation.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Skill, AskUserQuestion, EnterPlanMode
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, Skill, AskUserQuestion, EnterPlanMode
 ---
 
 # Brainstorm
@@ -29,6 +29,8 @@ when the user asks to add, show, or clear custom brainstorm rules, handle these 
 - **clear user rules**: delete `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`.
 
 project-level rules (`.claude/brainstorm-rules.md`) take precedence over user-level rules (`$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
+
+**CRITICAL: this skill must NEVER modify its own files (skills, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.claude/brainstorm-rules.md` and `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`. if the user asks to change the skill's behavior, suggest creating a plan — do not edit skill files directly.**
 
 ## Process
 

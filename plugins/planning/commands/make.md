@@ -1,7 +1,7 @@
 ---
 description: Create structured implementation plan in docs/plans/
 argument-hint: describe the feature or task to plan
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, AskUserQuestion, Task, EnterPlanMode, TaskCreate, TaskUpdate, TaskList
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, Task, EnterPlanMode, TaskCreate, TaskUpdate, TaskList
 ---
 
 # Implementation Plan Creation
@@ -29,6 +29,8 @@ when the user asks to add, show, or clear custom planning rules, handle these op
 - **clear user rules**: delete `$CLAUDE_PLUGIN_DATA/planning-rules.md`.
 
 project-level rules (`.claude/planning-rules.md`) take precedence over user-level rules (`$CLAUDE_PLUGIN_DATA/planning-rules.md`). when both non-empty files exist, only project-level rules are loaded. empty files are treated as absent and fall through to the next level. see `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
+
+**CRITICAL: this skill must NEVER modify its own files (commands, skills, agents, scripts, references, hooks, plugin.json). the ONLY files it may create or modify for rules management are `.claude/planning-rules.md` and `$CLAUDE_PLUGIN_DATA/planning-rules.md`. if the user asks to change the skill's behavior, create a plan for it — do not edit skill files directly.**
 
 ## step 0: parse intent and gather context
 
