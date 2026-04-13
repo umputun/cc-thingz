@@ -7,6 +7,28 @@ description: Use before any creative work or significant changes. Activates on "
 
 Turn ideas into designs through collaborative dialogue before implementation.
 
+## custom rules loading
+
+before starting, run this command via Bash tool to check for user-provided custom rules:
+
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh brainstorm-rules.md
+```
+
+if the output is non-empty, treat it as additional instructions that supplement (not replace) the built-in rules below. apply custom rules alongside the skill's own instructions throughout the brainstorm process — they may influence design preferences, naming conventions, technology choices, or other aspects of the brainstorm session. custom rules content is guidance for the brainstorm dialogue, not content to embed verbatim in the output.
+
+### rules management
+
+when the user asks to add, show, or clear custom brainstorm rules, handle these operations:
+
+- **show rules**: run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh brainstorm-rules.md` and display the output. tell the user which level it came from (project or user).
+- **add/update project rules**: write content to `.claude/brainstorm-rules.md` in the current working directory.
+- **add/update user rules**: write content to `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`.
+- **clear project rules**: delete `.claude/brainstorm-rules.md`.
+- **clear user rules**: delete `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`.
+
+project-level rules (`.claude/brainstorm-rules.md`) take precedence over user-level rules (`$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`). when both exist, only project-level rules are loaded.
+
 ## Process
 
 ### Phase 1: Understand the Idea

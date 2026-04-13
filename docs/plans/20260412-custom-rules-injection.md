@@ -149,9 +149,9 @@
 **Files:**
 - Modify: `plugins/brainstorm/skills/brainstorm/SKILL.md`
 
-- [ ] add LLM-invoked bash instructions to run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh brainstorm-rules.md` and apply non-empty output as additional rules
-- [ ] add rules management instructions — when user asks to add/show/clear rules, handle at both project (`.claude/brainstorm-rules.md`) and user (`$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`) levels
-- [ ] verify: create sample rules file, invoke brainstorm, confirm rules appear
+- [x] add LLM-invoked bash instructions to run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh brainstorm-rules.md` and apply non-empty output as additional rules
+- [x] add rules management instructions — when user asks to add/show/clear rules, handle at both project (`.claude/brainstorm-rules.md`) and user (`$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`) levels
+- [x] verify: create sample rules file, invoke brainstorm, confirm rules appear
 
 ### Task 8: Add custom-rules.md reference docs
 
