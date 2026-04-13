@@ -119,9 +119,9 @@
 **Files:**
 - Modify: `plugins/planning/commands/make.md`
 
-- [ ] add LLM-invoked bash instructions after frontmatter, before step 0 — tell Claude to run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md` and apply non-empty output as additional rules (appended to, not replacing, the command's built-in instructions)
-- [ ] add rules management instructions — when user asks to add/show/clear rules, handle at both project (`.claude/planning-rules.md`) and user (`$CLAUDE_PLUGIN_DATA/planning-rules.md`) levels. Rules guide plan-creation behavior, not embedded in output plan file.
-- [ ] verify: create sample rules file, invoke `/planning:make`, confirm rules appear in context
+- [x] add LLM-invoked bash instructions after frontmatter, before step 0 — tell Claude to run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md` and apply non-empty output as additional rules (appended to, not replacing, the command's built-in instructions)
+- [x] add rules management instructions — when user asks to add/show/clear rules, handle at both project (`.claude/planning-rules.md`) and user (`$CLAUDE_PLUGIN_DATA/planning-rules.md`) levels. Rules guide plan-creation behavior, not embedded in output plan file.
+- [x] verify: create sample rules file, invoke `/planning:make`, confirm rules appear in context
 
 ### Task 5: Add rules injection to plan-review agent
 
