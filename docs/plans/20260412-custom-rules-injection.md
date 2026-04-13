@@ -109,10 +109,10 @@
 **Files:**
 - Create: `plugins/planning/scripts/test-resolve-rules.sh`
 
-- [ ] create test script that exercises: (1) no files present → empty output, (2) only project file → outputs project content, (3) only user file → outputs user content, (4) both files → outputs project content only, (5) empty file → empty output
-- [ ] use temp directories and cleanup to avoid polluting working directory
-- [ ] make script executable
-- [ ] run tests, verify all pass
+- [x] create test script that exercises: (1) no files present → empty output, (2) only project file → outputs project content, (3) only user file → outputs user content, (4) both files → outputs project content only, (5) empty file → empty output
+- [x] use temp directories and cleanup to avoid polluting working directory
+- [x] make script executable
+- [x] run tests, verify all pass
 
 ### Task 4: Add rules injection to planning:make command
 
