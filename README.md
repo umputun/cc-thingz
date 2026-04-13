@@ -30,8 +30,8 @@ Copy the files you want to your Claude Code config directory manually.
 **brainstorm** — skill:
 ```bash
 cp -r plugins/brainstorm/skills/brainstorm ~/.claude/skills/
-cp -r plugins/brainstorm/scripts ~/.claude/skills/brainstorm/
-cp -r plugins/brainstorm/references ~/.claude/skills/brainstorm/
+cp -r plugins/brainstorm/scripts/ ~/.claude/skills/brainstorm/scripts
+cp -r plugins/brainstorm/references/ ~/.claude/skills/brainstorm/references
 ```
 
 Note: when installed manually, update `${CLAUDE_PLUGIN_ROOT}` references inside `brainstorm/SKILL.md` to use `~/.claude/skills/brainstorm` instead.
@@ -50,8 +50,8 @@ Note: update the `/review:writing-style` reference inside `pr/SKILL.md` to `/wri
 ```bash
 cp plugins/planning/commands/make.md ~/.claude/commands/
 cp -r plugins/planning/skills/exec ~/.claude/skills/
-cp -r plugins/planning/scripts ~/.claude/commands/scripts
-cp -r plugins/planning/references ~/.claude/commands/references
+cp -r plugins/planning/scripts/ ~/.claude/commands/scripts
+cp -r plugins/planning/references/ ~/.claude/commands/references
 cp plugins/planning/hooks/plan-annotate.py ~/.claude/scripts/
 chmod +x ~/.claude/scripts/plan-annotate.py
 chmod +x ~/.claude/skills/exec/scripts/*.sh
