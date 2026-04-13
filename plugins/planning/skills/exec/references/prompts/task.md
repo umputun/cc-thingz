@@ -1,6 +1,6 @@
 # Task prompt for subagent
 
-Use this prompt when spawning each task subagent (replace `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, and `${CLAUDE_PLUGIN_ROOT}` with actual values):
+Use this prompt when spawning each task subagent (replace `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `USER_RULES`, and `${CLAUDE_PLUGIN_ROOT}` with actual values):
 
 ```
 Read the plan file at PLAN_FILE_PATH. Find the FIRST Task section (### Task N: or ### Iteration N:) that has uncompleted checkboxes ([ ]).
@@ -11,6 +11,8 @@ CRITICAL CONSTRAINT: Complete ONE Task section per iteration.
 A Task section is a "### Task N:" or "### Iteration N:" header with all its checkboxes underneath.
 Complete ALL checkboxes in that section, then STOP.
 Do NOT continue to the next section.
+
+USER_RULES
 
 STEP 1 - IMPLEMENT:
 - Read the plan's Overview and Context sections to understand the work

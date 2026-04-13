@@ -29,8 +29,12 @@ Copy the files you want to your Claude Code config directory manually.
 
 **brainstorm** — skill:
 ```bash
-cp -r plugins/brainstorm/skills/do ~/.claude/skills/
+cp -r plugins/brainstorm/skills/brainstorm ~/.claude/skills/
+cp -r plugins/brainstorm/scripts/ ~/.claude/skills/brainstorm/scripts
+cp -r plugins/brainstorm/references/ ~/.claude/skills/brainstorm/references
 ```
+
+Note: when installed manually, update `${CLAUDE_PLUGIN_ROOT}` references inside `brainstorm/SKILL.md` to use `~/.claude/skills/brainstorm` instead.
 
 **review** — skills (review-pr + git-review + writing-style):
 ```bash
@@ -46,12 +50,14 @@ Note: update the `/review:writing-style` reference inside `pr/SKILL.md` to `/wri
 ```bash
 cp plugins/planning/commands/make.md ~/.claude/commands/
 cp -r plugins/planning/skills/exec ~/.claude/skills/
+cp -r plugins/planning/scripts/ ~/.claude/commands/scripts
+cp -r plugins/planning/references/ ~/.claude/commands/references
 cp plugins/planning/hooks/plan-annotate.py ~/.claude/scripts/
 chmod +x ~/.claude/scripts/plan-annotate.py
 chmod +x ~/.claude/skills/exec/scripts/*.sh
 ```
 
-Note: when installed manually, update `${CLAUDE_PLUGIN_ROOT}` references inside `exec/SKILL.md` and prompt files to use `~/.claude/skills/exec` instead.
+Note: when installed manually, update `${CLAUDE_PLUGIN_ROOT}` references inside `exec/SKILL.md`, `make.md`, and prompt files to use the appropriate local paths instead.
 
 Add the plan-annotate hook to `~/.claude/settings.json`:
 ```json
@@ -315,6 +321,42 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 **md-copy** — formats the session's final answer as clean markdown (bold titles instead of headings, proper tables, code blocks) and copies to clipboard. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
 
 **txt-copy** — copies generated text (emails, messages, letters) to clipboard via a timestamped temp file. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
+
+## Custom Rules
+
+Both the **planning** and **brainstorm** plugins support custom rules injection — free-form markdown files loaded at skill invocation time and applied as additional instructions alongside built-in behavior.
+
+**Two levels**, checked in order (first-found-wins, never merged):
+
+1. **Project-level**: `.claude/<rules-file>.md` in the current working directory
+2. **User-level**: `$CLAUDE_PLUGIN_DATA/<rules-file>.md` (per-plugin persistent storage)
+
+When both non-empty files exist, only the project-level file is used. Empty files are treated as absent and fall through to the next level.
+
+| Plugin | Rules file | Affects |
+|--------|-----------|---------|
+| planning | `planning-rules.md` | make, exec, plan-review |
+| brainstorm | `brainstorm-rules.md` | brainstorm skill |
+
+**Example** — create `.claude/planning-rules.md` in your project:
+
+```markdown
+## testing conventions
+- use table-driven tests with testify
+- mock external dependencies with moq
+- aim for 80% coverage minimum
+
+## plan structure preferences
+- max 5 checkboxes per task
+- always include rollback steps for migrations
+```
+
+**Managing rules** — ask the make command or brainstorm skill to add, show, or clear rules at either level (exec loads rules but management is done through make or brainstorm):
+
+- "show my planning rules" — displays current rules and which level they came from
+- "add Go testing rules to project-level planning rules" — writes to `.claude/planning-rules.md`
+- "set up brainstorm rules from my-conventions.md" — reads file and writes to rules location
+- "clear user-level brainstorm rules" — deletes `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`
 
 ## Credits
 
