@@ -99,10 +99,10 @@
 **Files:**
 - Create: `plugins/brainstorm/scripts/resolve-rules.sh`
 
-- [ ] create `plugins/brainstorm/scripts/` directory
-- [ ] create `plugins/brainstorm/scripts/resolve-rules.sh` — same logic as planning's copy, standalone
-- [ ] make script executable
-- [ ] verify script works same as task 1
+- [x] create `plugins/brainstorm/scripts/` directory
+- [x] create `plugins/brainstorm/scripts/resolve-rules.sh` — same logic as planning's copy, standalone
+- [x] make script executable
+- [x] verify script works same as task 1
 
 ### Task 3: Add automated tests for resolve-rules.sh
 
