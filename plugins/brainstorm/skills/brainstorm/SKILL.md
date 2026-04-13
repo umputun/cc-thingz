@@ -27,7 +27,7 @@ when the user asks to add, show, or clear custom brainstorm rules, handle these 
 - **clear project rules**: delete `.claude/brainstorm-rules.md`.
 - **clear user rules**: delete `$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`.
 
-project-level rules (`.claude/brainstorm-rules.md`) take precedence over user-level rules (`$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`). when both exist, only project-level rules are loaded.
+project-level rules (`.claude/brainstorm-rules.md`) take precedence over user-level rules (`$CLAUDE_PLUGIN_DATA/brainstorm-rules.md`). when both exist, only project-level rules are loaded. see `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
 
 ## Process
 

@@ -35,7 +35,7 @@ Before starting execution, run this command via Bash tool to check for user-prov
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md
 ```
 
-If the output is non-empty, store it as the resolved custom rules content. This content will be substituted into the `USER_RULES` placeholder in task prompts so that each subagent receives the same custom rules. If the output is empty, substitute an empty string for `USER_RULES`.
+If the output is non-empty, store it as the resolved custom rules content. This content will be substituted into the `USER_RULES` placeholder in task prompts so that each subagent receives the same custom rules. If the output is empty, substitute an empty string for `USER_RULES`. See `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
 
 ## Process
 

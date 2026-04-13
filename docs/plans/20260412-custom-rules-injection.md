@@ -159,16 +159,16 @@
 - Create: `plugins/planning/references/custom-rules.md`
 - Create: `plugins/brainstorm/references/custom-rules.md`
 
-- [ ] create `plugins/planning/references/custom-rules.md` — documents the rules mechanism, file locations (project + user), resolution order, example content, how to add/show/clear rules
-- [ ] create `plugins/brainstorm/references/custom-rules.md` — same structure, brainstorm-specific file names
-- [ ] reference these docs from each skill's rules management instructions
+- [x] create `plugins/planning/references/custom-rules.md` — documents the rules mechanism, file locations (project + user), resolution order, example content, how to add/show/clear rules
+- [x] create `plugins/brainstorm/references/custom-rules.md` — same structure, brainstorm-specific file names
+- [x] reference these docs from each skill's rules management instructions
 
 ### Task 9: Run regression tests and verify no breakage
 
-- [ ] run `python3 plugins/planning/scripts/plan-annotate.py --test`
-- [ ] run `bash plugins/planning/scripts/test-resolve-rules.sh`
-- [ ] verify all existing hook scripts still reference correct paths
-- [ ] spot-check that exec's existing `resolve-file.sh` is unchanged and still works
+- [x] run `python3 plugins/planning/scripts/plan-annotate.py --test`
+- [x] run `bash plugins/planning/scripts/test-resolve-rules.sh`
+- [x] verify all existing hook scripts still reference correct paths
+- [x] spot-check that exec's existing `resolve-file.sh` is unchanged and still works
 
 ### Task 10: Update README and bump plugin versions
 

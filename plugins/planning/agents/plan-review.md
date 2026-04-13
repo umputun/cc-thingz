@@ -20,7 +20,7 @@ Before starting the review, run this command via Bash tool to check for user-pro
 bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md
 ```
 
-If the output is non-empty, treat it as additional review criteria that supplement (not replace) the built-in review checklist below. Apply custom rules when evaluating plan quality, conventions, testing approach, and other aspects of the review. Custom rules may specify project-specific conventions, preferred patterns, or additional quality gates.
+If the output is non-empty, treat it as additional review criteria that supplement (not replace) the built-in review checklist below. Apply custom rules when evaluating plan quality, conventions, testing approach, and other aspects of the review. Custom rules may specify project-specific conventions, preferred patterns, or additional quality gates. See `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
 
 ## Plan Structure Reference
 

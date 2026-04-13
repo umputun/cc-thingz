@@ -28,7 +28,7 @@ when the user asks to add, show, or clear custom planning rules, handle these op
 - **clear project rules**: delete `.claude/planning-rules.md`.
 - **clear user rules**: delete `$CLAUDE_PLUGIN_DATA/planning-rules.md`.
 
-project-level rules (`.claude/planning-rules.md`) take precedence over user-level rules (`$CLAUDE_PLUGIN_DATA/planning-rules.md`). when both exist, only project-level rules are loaded.
+project-level rules (`.claude/planning-rules.md`) take precedence over user-level rules (`$CLAUDE_PLUGIN_DATA/planning-rules.md`). when both exist, only project-level rules are loaded. see `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
 
 ## step 0: parse intent and gather context
 
