@@ -40,7 +40,7 @@ The planning plugin has three components: make (plan creation), exec (autonomous
 2. Asks about worktree isolation (worktree vs current directory)
 3. Creates a feature branch
 4. Executes tasks sequentially — one subagent per task, commits after each
-5. Runs multi-phase review: comprehensive → code smells → external (codex) → critical-only
+5. Runs multi-phase review: comprehensive (iteration 1) then critical re-check loop → code smells → external (codex) → critical-only
 6. Optional finalize: rebase and squash commits
 
 ### Configuration

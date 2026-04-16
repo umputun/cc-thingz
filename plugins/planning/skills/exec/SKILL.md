@@ -121,15 +121,17 @@ CRITICAL: You are the ORCHESTRATOR. Never read code, debug errors, investigate d
 
 Maximum iterations safety limit: 50. If reached, stop and report to user.
 
-### Step 7. Review phase 1 — comprehensive
+### Step 7. Review phase 1 — comprehensive then critical re-check
 
-After all tasks complete, run a comprehensive code review.
+After all tasks complete, run a comprehensive code review on iteration 1, then narrow to critical-only re-checks on subsequent iterations to verify the fixer's work without re-running the full heavy sweep.
 
 Report to user: "--- Review phase 1: comprehensive ---"
 
-Loop up to `review_iterations` times (userConfig, default: 5):
+Loop up to `review_iterations` times (userConfig, default: 5). Track the current iteration number:
 
-1. **Spawn a review agent** — resolve `prompts/review.md` through the override chain. Launch one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the resolved prompt with `REVIEW_PHASE` set to `comprehensive`. Replace `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, and `${CLAUDE_PLUGIN_ROOT}`. The review agent launches 5 agents in parallel, collects findings, and reports back.
+1. **Spawn a review agent** — resolve `prompts/review.md` through the override chain. Launch one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the resolved prompt. Replace `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, and `${CLAUDE_PLUGIN_ROOT}`.
+   - **Iteration 1**: set `REVIEW_PHASE` to `comprehensive`. The review agent launches 5 agents in parallel (quality, implementation, testing, simplification, documentation).
+   - **Iteration 2 and later**: set `REVIEW_PHASE` to `critical`. The review agent launches 2 agents (quality, implementation) focused on critical/major issues only. Before this iteration, report to user: "--- Review phase 1: critical re-check (iteration N) ---"
 
 2. **Collect findings** — pass the review agent's COMPLETE output (not a summary) to the fixer. Do NOT summarize, filter, or dismiss any findings. ALL findings are actionable. Report to user with a short list of findings. Log to progress file:
    `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh <progress-file> "review phase 1: findings"`
