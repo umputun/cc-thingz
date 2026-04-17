@@ -11,6 +11,7 @@ EXEC_SCRIPTS_DIR="$REPO_ROOT/plugins/planning/skills/exec/scripts"
 DETECT_BRANCH="$EXEC_SCRIPTS_DIR/detect-branch.sh"
 CREATE_BRANCH="$EXEC_SCRIPTS_DIR/create-branch.sh"
 STAGE_AND_COMMIT="$EXEC_SCRIPTS_DIR/stage-and-commit.sh"
+RUN_CODEX="$EXEC_SCRIPTS_DIR/run-codex.sh"
 
 passed=0
 failed=0
@@ -356,6 +357,109 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
         passed=$((passed + 1))
         ;;
     esac
+fi
+
+echo ""
+echo "testing VCS dispatch: run-codex.sh"
+echo "=================================="
+
+# assertion helper: checks a string contains a substring
+assert_contains() {
+    local test_name="$1"
+    local haystack="$2"
+    local needle="$3"
+    case "$haystack" in
+    *"$needle"*)
+        echo "  PASS: $test_name"
+        passed=$((passed + 1))
+        ;;
+    *)
+        echo "  FAIL: $test_name"
+        echo "    expected substring: $(printf '%q' "$needle")"
+        echo "    in:                 $(printf '%q' "$haystack")"
+        failed=$((failed + 1))
+        ;;
+    esac
+}
+
+# assertion helper: checks a string does NOT contain a substring
+assert_not_contains() {
+    local test_name="$1"
+    local haystack="$2"
+    local needle="$3"
+    case "$haystack" in
+    *"$needle"*)
+        echo "  FAIL: $test_name"
+        echo "    unexpected substring: $(printf '%q' "$needle")"
+        echo "    in:                   $(printf '%q' "$haystack")"
+        failed=$((failed + 1))
+        ;;
+    *)
+        echo "  PASS: $test_name"
+        passed=$((passed + 1))
+        ;;
+    esac
+}
+
+# create a codex stub that prints each argument on its own line and exits 0.
+# using a unique dir per run keeps the test hermetic against any real codex install.
+STUB_DIR="$(mk_tmp)"
+cat >"$STUB_DIR/codex" <<'STUB'
+#!/bin/bash
+for arg in "$@"; do
+    printf '%s\n' "$arg"
+done
+STUB
+chmod +x "$STUB_DIR/codex"
+
+# test 15: git repo -> codex called WITHOUT --skip-git-repo-check
+echo ""
+echo "test 15: git repo -> codex invocation has no --skip-git-repo-check"
+GIT_RC="$(mk_tmp)"
+make_git_repo "$GIT_RC" main
+stub_out="$(cd "$GIT_RC" && PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
+assert_not_contains "git: no --skip-git-repo-check" "$stub_out" "--skip-git-repo-check"
+assert_contains "git: exec is present" "$stub_out" "exec"
+assert_contains "git: --sandbox is present" "$stub_out" "--sandbox"
+assert_contains "git: -c model= flag present" "$stub_out" "model=gpt-5.4"
+assert_contains "git: -c model_reasoning_effort= flag present" "$stub_out" "model_reasoning_effort=high"
+assert_contains "git: -c stream_idle_timeout_ms= flag present" "$stub_out" "stream_idle_timeout_ms=3600000"
+assert_contains "git: project_doc=./CLAUDE.md flag present" "$stub_out" "project_doc=./CLAUDE.md"
+assert_contains "git: prompt is passed through" "$stub_out" "hello prompt"
+
+# test 15b: git repo with CODEX_MODEL override -> model is overridden
+echo ""
+echo "test 15b: git repo with CODEX_MODEL override"
+stub_out="$(cd "$GIT_RC" && CODEX_MODEL=gpt-5.5 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
+assert_contains "git: CODEX_MODEL env var overrides model" "$stub_out" "model=gpt-5.5"
+assert_not_contains "git: default model not used when override set" "$stub_out" "model=gpt-5.4"
+
+if [ "$HG_AVAILABLE" -eq 1 ]; then
+    # test 16: hg repo -> codex called WITH --skip-git-repo-check positioned
+    # right after 'exec' (before --sandbox)
+    echo ""
+    echo "test 16: hg repo -> codex has --skip-git-repo-check immediately after exec"
+    HG_RC="$(mk_tmp)"
+    make_hg_repo "$HG_RC"
+    stub_out="$(cd "$HG_RC" && PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
+    assert_contains "hg: --skip-git-repo-check flag is present" "$stub_out" "--skip-git-repo-check"
+    assert_contains "hg: exec is present" "$stub_out" "exec"
+    assert_contains "hg: --sandbox is present" "$stub_out" "--sandbox"
+    assert_contains "hg: -c model= flag present" "$stub_out" "model=gpt-5.4"
+    assert_contains "hg: -c model_reasoning_effort= flag present" "$stub_out" "model_reasoning_effort=high"
+    assert_contains "hg: project_doc=./CLAUDE.md flag present" "$stub_out" "project_doc=./CLAUDE.md"
+    assert_contains "hg: prompt is passed through" "$stub_out" "hello prompt"
+
+    # verify ordering: exec, then --skip-git-repo-check, then --sandbox
+    # the stub outputs one arg per line, so we can directly index by line
+    line1="$(printf '%s\n' "$stub_out" | sed -n '1p')"
+    line2="$(printf '%s\n' "$stub_out" | sed -n '2p')"
+    line3="$(printf '%s\n' "$stub_out" | sed -n '3p')"
+    line4="$(printf '%s\n' "$stub_out" | sed -n '4p')"
+    assert_output "hg: arg 1 is 'exec'" "exec" "$line1"
+    assert_output "hg: arg 2 is '--skip-git-repo-check'" "--skip-git-repo-check" "$line2"
+    assert_output "hg: arg 3 is '--sandbox'" "--sandbox" "$line3"
+    assert_output "hg: arg 4 is 'read-only'" "read-only" "$line4"
 fi
 
 # summary
