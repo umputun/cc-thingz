@@ -230,6 +230,8 @@ Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
 
 Review agents are read-only reporters. The fixer agent evaluates each finding, fixes confirmed issues, rejects false positives, and reports back.
 
+**VCS support** — the exec helper scripts are VCS-aware and work in both git and Mercurial (hg) repositories. The finalize and external-review phases remain git-only, but their behaviour can be customised for hg via `.claude/exec-plan/prompts/finalizer.md` and `.claude/exec-plan/prompts/codex-review.md` overrides.
+
 **Customization** — prompts and agent definitions use a three-layer override chain (checked in order, first match wins):
 1. Project: `.claude/exec-plan/prompts/` and `.claude/exec-plan/agents/`
 2. User: `${CLAUDE_PLUGIN_DATA}/prompts/` and `${CLAUDE_PLUGIN_DATA}/agents/`

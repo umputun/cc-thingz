@@ -352,9 +352,9 @@ Step 2 asks the user whether to isolate in an `EnterWorktree`. `EnterWorktree` i
 
 ### Task 8: [Final] Update documentation + plan archival
 
-- [ ] README.md — add a line in the `plugins/planning/` description noting hg support for the `/exec` skill (scripts are VCS-aware; finalize and external review remain git-only, override via `.claude/exec-plan/` to customise)
-- [ ] CLAUDE.md — no change expected; the existing rules already cover shell script conventions
-- [ ] move this plan to `docs/plans/completed/20260417-hg-support-planning-exec-scripts.md`
+- [x] README.md — add a line in the `plugins/planning/` description noting hg support for the `/exec` skill (scripts are VCS-aware; finalize and external review remain git-only, override via `.claude/exec-plan/` to customise)
+- [x] CLAUDE.md — no change needed; existing conventions (shellcheck/shfmt rules, `${CLAUDE_PLUGIN_ROOT}` usage, plugin versioning) already cover the hg-aware scripts without modification
+- [x] deferred — exec skill completion will archive after reviews and finalize (plan file must stay at current path so `/planning:exec` Review + Finalize phases 7-11 can still read it)
 
 ## Post-Completion
 
