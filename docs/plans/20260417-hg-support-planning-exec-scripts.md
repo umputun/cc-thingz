@@ -267,14 +267,14 @@ Step 2 asks the user whether to isolate in an `EnterWorktree`. `EnterWorktree` i
 - Modify: `plugins/planning/skills/exec/scripts/detect-branch.sh`
 - Create: `tests/test-exec-vcs-dispatch.sh` (git + hg coverage for all four dispatch scripts; add the `detect-branch` cases first, more added in subsequent tasks)
 
-- [ ] write `tests/test-exec-vcs-dispatch.sh` scaffolding FIRST (temp git and hg repos, helpers, trap cleanup). Add tests: git repo with `main` → outputs `main`; git repo with `master` → outputs `master`; hg repo (any state) → outputs `default`. Tests should fail against the current unmodified script for the hg case (silent-`main` bug) — confirm before implementing
-- [ ] wrap the existing body in `do_git()` — zero edits inside the function
-- [ ] add `do_hg() { echo "default"; }`
-- [ ] add dispatch at top (source `detect-vcs.sh`, case with `*)` safety arm)
-- [ ] git regression: `diff /tmp/exec-scripts-baseline-$(id -u).txt <(./detect-branch.sh)` against the baseline git repo — must be empty for this script's rows (fail-loud guard per Task 1)
-- [ ] `shellcheck` + `shfmt -d`
-- [ ] run `bash tests/test-*.sh` — all must pass
-- [ ] must pass before next task
+- [x] write `tests/test-exec-vcs-dispatch.sh` scaffolding FIRST (temp git and hg repos, helpers, trap cleanup). Add tests: git repo with `main` → outputs `main`; git repo with `master` → outputs `master`; hg repo (any state) → outputs `default`. Tests should fail against the current unmodified script for the hg case (silent-`main` bug) — confirm before implementing
+- [x] wrap the existing body in `do_git()` — zero edits inside the function
+- [x] add `do_hg() { echo "default"; }`
+- [x] add dispatch at top (source `detect-vcs.sh`, case with `*)` safety arm)
+- [x] git regression: `diff /tmp/exec-scripts-baseline-$(id -u).txt <(./detect-branch.sh)` against the baseline git repo — must be empty for this script's rows (fail-loud guard per Task 1)
+- [x] `shellcheck` + `shfmt -d`
+- [x] run `bash tests/test-*.sh` — all must pass
+- [x] must pass before next task
 
 ### Task 3: Refactor `create-branch.sh` to VCS dispatch
 
