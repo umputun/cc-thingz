@@ -328,15 +328,15 @@ Step 2 asks the user whether to isolate in an `EnterWorktree`. `EnterWorktree` i
 **Files:**
 - Modify: `plugins/planning/skills/exec/SKILL.md`
 
-- [ ] apply insertion (1) at the end of step 1 — the detect-vcs call + hg note block (see SKILL.md edits in Technical Details for exact wording)
-- [ ] apply insertion (2) at the very top of step 9 — the hg skip block that routes to step 10
-- [ ] apply insertion (3) at the very top of step 11 — the hg skip block that routes to step 12
-- [ ] investigate `EnterWorktree` behaviour in hg repos: check Claude Code docs / try it manually in an hg repo — does the tool succeed, fail, or error unclearly? If it doesn't work cleanly, add a step-2 edit: "If `vcs` is `hg`, skip the worktree question and proceed in current directory." If it *does* work (e.g., because it wraps `jj`-style workspaces or similar), no edit needed but document findings in the commit message. Either outcome is fine; the key is a clear decision rather than leaving it ambiguous
-- [ ] grep the rest of SKILL.md for other git-specific instructions (`git diff`, `git log`, `git checkout`, `git rebase`) — flag any found in the document body, don't blanket-edit. Expected: none outside steps 9 and 11 (subagent prompts are in `references/prompts/`, not in SKILL.md)
-- [ ] use British spelling ("customise" not "customize", "behaviour" not "behavior") to match repo convention from global CLAUDE.md
-- [ ] verify YAML frontmatter still parses (`python3 -c "import yaml; yaml.safe_load(open('plugins/planning/skills/exec/SKILL.md').read().split('---')[1])"` — or just rely on CI's frontmatter validation step)
-- [ ] no code changes, no test additions for this task — documentation change only
-- [ ] must pass before next task
+- [x] apply insertion (1) at the end of step 1 — the detect-vcs call + hg note block (see SKILL.md edits in Technical Details for exact wording)
+- [x] apply insertion (2) at the very top of step 9 — the hg skip block that routes to step 10
+- [x] apply insertion (3) at the very top of step 11 — the hg skip block that routes to step 12
+- [x] investigate `EnterWorktree` behaviour in hg repos: check Claude Code docs / try it manually in an hg repo — does the tool succeed, fail, or error unclearly? If it doesn't work cleanly, add a step-2 edit: "If `vcs` is `hg`, skip the worktree question and proceed in current directory." If it *does* work (e.g., because it wraps `jj`-style workspaces or similar), no edit needed but document findings in the commit message. Either outcome is fine; the key is a clear decision rather than leaving it ambiguous
+- [x] grep the rest of SKILL.md for other git-specific instructions (`git diff`, `git log`, `git checkout`, `git rebase`) — flag any found in the document body, don't blanket-edit. Expected: none outside steps 9 and 11 (subagent prompts are in `references/prompts/`, not in SKILL.md)
+- [x] use British spelling ("customise" not "customize", "behaviour" not "behavior") to match repo convention from global CLAUDE.md
+- [x] verify YAML frontmatter still parses (`python3 -c "import yaml; yaml.safe_load(open('plugins/planning/skills/exec/SKILL.md').read().split('---')[1])"` — or just rely on CI's frontmatter validation step)
+- [x] no code changes, no test additions for this task — documentation change only
+- [x] must pass before next task
 
 ### Task 7: Verify acceptance criteria
 
