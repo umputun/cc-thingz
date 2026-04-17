@@ -47,7 +47,11 @@ Read the plan file. Count total Task sections (`### Task N:` or `### Iteration N
 
 Determine the default branch: `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-branch.sh`
 
+Note: in `hg` repos, the external-review prompt (`prompts/codex-review.md`) and the finalize prompt (`prompts/finalizer.md`) use git-specific commands and are not VCS-translated upstream. Both phases will be skipped (see step 9 and step 11, which re-detect VCS locally). Users who want hg-native review/finalize can override via `.claude/exec-plan/prompts/codex-review.md` and `.claude/exec-plan/prompts/finalizer.md` — note that `DEFAULT_BRANCH` substitutes as `default` (hg's default-branch name), so any `git rebase origin/DEFAULT_BRANCH` in the bundled template must be replaced with the hg equivalent (e.g. `hg rebase -d default`) in the override.
+
 ### Step 2. Ask about worktree isolation
+
+**hg skip**: Detect VCS with `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`. If `vcs` is `hg`, skip the worktree question and proceed in current directory. The `EnterWorktree` tool is git-only (wraps `git worktree add`) and has no hg equivalent upstream; users who want isolation in hg repos can use `hg share` manually before invoking `/exec`.
 
 Ask the user whether to run in an isolated git worktree or in the current working directory using AskUserQuestion:
 
@@ -165,6 +169,8 @@ Run once (no loop):
 
 ### Step 9. Review phase 3 — codex external review
 
+**hg skip**: Detect VCS with `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`. If `vcs` is `hg`, skip this entire step. Report to user: "hg detected — skipping external review (git-only). Override `prompts/codex-review.md` via `.claude/exec-plan/` to enable hg-native review." Proceed directly to step 10.
+
 Report to user: "--- Review phase 3: codex external review ---"
 
 Adversarial loop: codex reviews the code, fixer evaluates and fixes, codex re-reviews. Same fixer pattern as Claude reviews.
@@ -197,6 +203,8 @@ Report to user: "--- Review phase 4: critical/major only (single pass) ---"
 Same structure as step 7 but with `REVIEW_PHASE` set to `critical`. Resolve `prompts/review.md` through the override chain, spawn one review agent. The review agent launches 2 agents (quality, implementation) focusing on critical/major issues only. Same fixer flow — pass findings to fixer, show FIXES to user.
 
 ### Step 11. Finalize
+
+**hg skip**: Detect VCS with `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`. If `vcs` is `hg`, skip this entire step. Report to user: "hg detected — skipping finalize (git-only). Override `prompts/finalizer.md` via `.claude/exec-plan/` to enable hg-native finalize." Note that `DEFAULT_BRANCH` substitutes as `default` (hg's default-branch name) when users override `prompts/finalizer.md` for hg, so any `git rebase origin/DEFAULT_BRANCH` in the bundled template must be replaced with the hg equivalent (e.g. `hg rebase -d default`) in the override. Proceed directly to step 12.
 
 Check `finalize_enabled` userConfig (default: true). If false, skip this step.
 

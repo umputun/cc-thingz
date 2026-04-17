@@ -48,6 +48,12 @@ jobs:
         run: |
           find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck
 
+      - name: Install mercurial
+        run: |
+          sudo apt-get install -y -qq --no-install-recommends mercurial || \
+              (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends mercurial)
+          hg --version
+
       - name: Run shell tests
         run: |
           for t in tests/test-*.sh; do bash "$t"; done
