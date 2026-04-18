@@ -151,19 +151,19 @@ The revdiff reference prepends `/usr/bin/env EDITOR=... VISUAL=...` to the launc
 **Files:**
 - Modify: `plugins/planning/scripts/plan-annotate.py`
 
-- [ ] Add ghostty branch inside `open_editor()` after the wezterm branch, before `return 1`.
-- [ ] Gate on `os.environ.get("TERM_PROGRAM") == "ghostty" and not os.environ.get("CMUX_SURFACE_ID") and shutil.which("osascript")` — cmux-guard prevents misrouting.
-- [ ] Create sentinel via `tempfile.mkstemp(prefix="plan-done-")` then unlink (existing pattern).
-- [ ] Build wrapper string: `f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'`.
-- [ ] Write wrapper to a temp launcher script via `tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False)` with `#!/bin/sh\n{wrapper}\n`, `chmod 0o755`.
-- [ ] Call `subprocess.run(["osascript", "-", launch_script_path], input=APPLESCRIPT, text=True, capture_output=True)` with the split+zoom AppleScript; read `result.stdout.strip()` as `ghostty_term_id`.
-- [ ] If osascript returns non-zero, unlink launcher + sentinel and `return 1`.
-- [ ] Poll sentinel with `time.sleep(0.3)` loop.
-- [ ] Call close AppleScript via `subprocess.run(["osascript", "-", ghostty_term_id], input=CLOSE_APPLESCRIPT, text=True, capture_output=True)`.
-- [ ] Unlink sentinel and launcher script, `return 0`.
-- [ ] Update top-of-file docstring: `requirements` list (line 29), `limitations` list (line 38), `terminal priority` line (line 35) to include ghostty.
-- [ ] Run `python3 plugins/planning/scripts/plan-annotate.py --test` to confirm embedded tests still pass (they do not exercise `open_editor`, so no changes expected).
-- [ ] Manual verify: invoke in file mode from Ghostty: `python3 plugins/planning/scripts/plan-annotate.py <some-plan.md>` — editor opens in split pane, edits produce diff on stdout.
+- [x] Add ghostty branch inside `open_editor()` after the wezterm branch, before `return 1`.
+- [x] Gate on `os.environ.get("TERM_PROGRAM") == "ghostty" and not os.environ.get("CMUX_SURFACE_ID") and shutil.which("osascript")` — cmux-guard prevents misrouting.
+- [x] Create sentinel via `tempfile.mkstemp(prefix="plan-done-")` then unlink (existing pattern).
+- [x] Build wrapper string: `f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'`.
+- [x] Write wrapper to a temp launcher script via `tempfile.NamedTemporaryFile(mode="w", suffix=".sh", delete=False)` with `#!/bin/sh\n{wrapper}\n`, `chmod 0o755`.
+- [x] Call `subprocess.run(["osascript", "-", launch_script_path], input=APPLESCRIPT, text=True, capture_output=True)` with the split+zoom AppleScript; read `result.stdout.strip()` as `ghostty_term_id`.
+- [x] If osascript returns non-zero, unlink launcher + sentinel and `return 1`.
+- [x] Poll sentinel with `time.sleep(0.3)` loop.
+- [x] Call close AppleScript via `subprocess.run(["osascript", "-", ghostty_term_id], input=CLOSE_APPLESCRIPT, text=True, capture_output=True)`.
+- [x] Unlink sentinel and launcher script, `return 0`.
+- [x] Update top-of-file docstring: `requirements` list (line 29), `limitations` list (line 38), `terminal priority` line (line 35) to include ghostty.
+- [x] Run `python3 plugins/planning/scripts/plan-annotate.py --test` to confirm embedded tests still pass (they do not exercise `open_editor`, so no changes expected).
+- [x] manual verify (skipped - not automatable): invoke in file mode from Ghostty: `python3 plugins/planning/scripts/plan-annotate.py <some-plan.md>` — editor opens in split pane, edits produce diff on stdout.
 
 ### Task 3: Add ghostty branch to git-review.py open_editor
 

@@ -4,7 +4,7 @@
 interactive plan review hook that lets you annotate Claude's plans directly
 in your editor before approving them. when Claude calls ExitPlanMode, this
 hook intercepts the call, opens the plan in $EDITOR via a terminal overlay
-(tmux or kitty), and waits for you to review/edit. if you make changes,
+(tmux, kitty, wezterm, or ghostty), and waits for you to review/edit. if you make changes,
 the hook computes a unified diff and sends it back to Claude as a denial
 reason, forcing Claude to revise the plan based on your annotations. if
 you make no changes, the normal approval dialog appears.
@@ -26,16 +26,17 @@ returns PreToolUse hook JSON response with permissionDecision:
   - "deny" → changes detected, unified diff sent as denial reason
 
 requirements:
-  - tmux, kitty, or wezterm terminal (tmux tried first, then kitty, then wezterm)
+  - tmux, kitty, wezterm, or ghostty terminal (tmux tried first, then kitty, then wezterm, then ghostty)
   - $EDITOR set (defaults to micro)
   - kitty users: kitty.conf must have allow_remote_control and listen_on configured:
       allow_remote_control yes
       listen_on unix:/tmp/kitty-$KITTY_PID
+  - ghostty users: requires Ghostty 1.3.0+ on macOS (uses AppleScript)
 
-terminal priority: tmux display-popup → kitty overlay → wezterm split-pane → error
+terminal priority: tmux display-popup → kitty overlay → wezterm split-pane → ghostty split → error
 
 limitations:
-  - requires tmux, kitty, or wezterm - without any, returns error (no annotation)
+  - requires tmux, kitty, wezterm, or ghostty - without any, returns error (no annotation)
   - does not work in plain terminals (iTerm2, Terminal.app, etc.)
   - kitty requires KITTY_LISTEN_ON env var (set by kitty when listen_on is configured)
   - the hook blocks until the editor closes; timeout should be set high
@@ -102,8 +103,8 @@ def get_diff(original: str, edited: str) -> str:
 
 
 def open_editor(filepath: Path, target_window: bool = True) -> int:
-    """open file in $EDITOR via tmux popup, kitty overlay, or wezterm split-pane, blocking until editor closes.
-    tries tmux first (if $TMUX is set), then kitty, then wezterm. returns non-zero if none is available.
+    """open file in $EDITOR via tmux popup, kitty overlay, wezterm split-pane, or ghostty split, blocking until editor closes.
+    tries tmux first (if $TMUX is set), then kitty, then wezterm, then ghostty. returns non-zero if none is available.
     when target_window is True (hook mode), targets the kitty window from KITTY_WINDOW_ID.
     when False (file mode), opens in the currently focused window."""
     editor = os.environ.get("EDITOR", "micro")
@@ -167,6 +168,67 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
         while not sentinel.exists():
             time.sleep(0.3)
         sentinel.unlink(missing_ok=True)
+        return 0
+
+    # ghostty: split pane via AppleScript (macOS only, requires Ghostty 1.3.0+).
+    # cmux sets TERM_PROGRAM=ghostty too; guard on CMUX_SURFACE_ID to avoid
+    # misrouting a cmux session into a real-Ghostty AppleScript split.
+    if (
+        os.environ.get("TERM_PROGRAM") == "ghostty"
+        and not os.environ.get("CMUX_SURFACE_ID")
+        and shutil.which("osascript")
+    ):
+        fd, sentinel_path = tempfile.mkstemp(prefix="plan-done-")
+        os.close(fd)
+        os.unlink(sentinel_path)
+        sentinel = Path(sentinel_path)
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+
+        launcher = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".sh", prefix="plan-launch-", delete=False
+        )
+        launcher.write(f"#!/bin/sh\n{wrapper}\n")
+        launcher.close()
+        launch_script_path = Path(launcher.name)
+        os.chmod(launch_script_path, 0o755)
+
+        applescript = """on run argv
+    set launchScript to item 1 of argv
+    tell application "Ghostty"
+        set cfg to new surface configuration
+        set command of cfg to launchScript
+        set wait after command of cfg to false
+        set ft to focused terminal of selected tab of front window
+        set newTerm to split ft direction down with configuration cfg
+        perform action "toggle_split_zoom" on newTerm
+        return id of newTerm
+    end tell
+end run
+"""
+        result = subprocess.run(
+            ["osascript", "-", str(launch_script_path)],
+            input=applescript, text=True, capture_output=True,
+        )
+        if result.returncode != 0:
+            launch_script_path.unlink(missing_ok=True)
+            sentinel.unlink(missing_ok=True)
+            return 1
+        ghostty_term_id = result.stdout.strip()
+
+        while not sentinel.exists():
+            time.sleep(0.3)
+
+        # dismiss Ghostty's default "press any key to close" prompt
+        close_applescript = """on run argv
+    tell application "Ghostty" to close terminal id (item 1 of argv)
+end run
+"""
+        subprocess.run(
+            ["osascript", "-", ghostty_term_id],
+            input=close_applescript, text=True, capture_output=True,
+        )
+        sentinel.unlink(missing_ok=True)
+        launch_script_path.unlink(missing_ok=True)
         return 0
 
     return 1
