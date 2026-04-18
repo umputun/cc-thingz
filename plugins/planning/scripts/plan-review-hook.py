@@ -76,13 +76,21 @@ def try_revdiff(plan_content: str, plugin_root: str) -> str | None:
             capture_output=True, text=True, timeout=345600,
             env={**os.environ},
         )
-        # distinguish launcher failure from a successful review with zero annotations:
-        #   return None → caller falls back to plan-annotate.py (no overlay available,
-        #                 osascript error, empty term id, etc.)
-        #   return ""   → user reviewed the plan and added no annotations (approve)
-        #   return "<text>" → user added annotations (deny with feedback)
-        if result.returncode != 0:
+        # distinguish launcher outcomes:
+        #   exit 127     → no overlay terminal available; fall back to plan-annotate.py
+        #   other non-0 → overlay was attempted but launcher/revdiff failed; surface
+        #                 as a deny reason so the user sees the actual error instead
+        #                 of a silent second review UI popping up
+        #   exit 0, ""   → user reviewed the plan and added no annotations (approve)
+        #   exit 0, text → user added annotations (deny with feedback)
+        if result.returncode == 127:
             return None
+        if result.returncode != 0:
+            stderr_text = (result.stderr or "").strip()[:500] or "no stderr output"
+            return (
+                f"revdiff review failed (exit {result.returncode}): {stderr_text}\n\n"
+                "revise the plan or try again."
+            )
         annotations = result.stdout.strip()
         if not annotations:
             return ""
@@ -134,8 +142,17 @@ def main() -> None:
     output = fallback.stdout.strip()
     if output:
         print(output)
-    else:
-        make_response("ask", "plan reviewed, no changes")
+        return
+    # empty stdout + non-zero exit means plan-annotate.py crashed — surface the
+    # error instead of silently approving the unreviewed plan.
+    if fallback.returncode != 0:
+        stderr_text = (fallback.stderr or "").strip()[:500] or "no stderr output"
+        make_response(
+            "ask",
+            f"plan-annotate.py failed (exit {fallback.returncode}): {stderr_text}",
+        )
+        return
+    make_response("ask", "plan reviewed, no changes")
 
 
 if __name__ == "__main__":

@@ -145,5 +145,8 @@ APPLESCRIPT
     exit 0
 fi
 
+# exit 127 ("command not found" convention) signals no overlay terminal was
+# available, so callers can fall back to a different review UI. All other
+# exit 1 paths above indicate an overlay WAS attempted but failed.
 echo "error: no overlay terminal available (requires tmux, kitty, wezterm, or ghostty)" >&2
-exit 1
+exit 127
