@@ -133,18 +133,18 @@ The revdiff reference prepends `/usr/bin/env EDITOR=... VISUAL=...` to the launc
 **Files:**
 - Modify: `plugins/planning/scripts/launch-plan-review.sh`
 
-- [ ] Insert ghostty block after the wezterm block (after line 79), before the final error message.
-- [ ] Gate on `[ "${TERM_PROGRAM:-}" = "ghostty" ] && [ -z "${CMUX_SURFACE_ID:-}" ] && command -v osascript >/dev/null 2>&1` — cmux-guard prevents misrouting when cmux sets `TERM_PROGRAM=ghostty`.
-- [ ] Create sentinel file via `mktemp /tmp/plan-review-done-XXXXXX` and immediately `rm -f` (matches existing pattern).
-- [ ] Create launcher script via `mktemp` containing `#!/bin/sh` + `$REVDIFF_CMD; touch '$SENTINEL'`, `chmod +x`.
-- [ ] Update trap to clean up launcher script (`trap 'rm -f "$OUTPUT_FILE" "$SENTINEL" "$LAUNCH_SCRIPT"' EXIT`).
-- [ ] Add `osascript` call with split-down + toggle_split_zoom AppleScript, capturing new terminal id.
-- [ ] Poll `while [ ! -f "$SENTINEL" ]; do sleep 0.3; done`.
-- [ ] Add close AppleScript to dismiss "press any key" prompt.
-- [ ] `cat "$OUTPUT_FILE"` then `exit 0`.
-- [ ] Update final error message to: `"error: no overlay terminal available (requires tmux, kitty, wezterm, or ghostty)"`.
-- [ ] Run `shellcheck plugins/planning/scripts/launch-plan-review.sh` and fix any warnings.
-- [ ] Manual verify: launch `bash plugins/planning/scripts/launch-plan-review.sh <some-plan.md>` inside a Ghostty window — split pane opens, revdiff loads, exits cleanly, annotations captured.
+- [x] Insert ghostty block after the wezterm block (after line 79), before the final error message.
+- [x] Gate on `[ "${TERM_PROGRAM:-}" = "ghostty" ] && [ -z "${CMUX_SURFACE_ID:-}" ] && command -v osascript >/dev/null 2>&1` — cmux-guard prevents misrouting when cmux sets `TERM_PROGRAM=ghostty`.
+- [x] Create sentinel file via `mktemp /tmp/plan-review-done-XXXXXX` and immediately `rm -f` (matches existing pattern).
+- [x] Create launcher script via `mktemp` containing `#!/bin/sh` + `$REVDIFF_CMD; touch '$SENTINEL'`, `chmod +x`.
+- [x] Update trap to clean up launcher script (`trap 'rm -f "$OUTPUT_FILE" "$SENTINEL" "$LAUNCH_SCRIPT"' EXIT`).
+- [x] Add `osascript` call with split-down + toggle_split_zoom AppleScript, capturing new terminal id.
+- [x] Poll `while [ ! -f "$SENTINEL" ]; do sleep 0.3; done`.
+- [x] Add close AppleScript to dismiss "press any key" prompt.
+- [x] `cat "$OUTPUT_FILE"` then `exit 0`.
+- [x] Update final error message to: `"error: no overlay terminal available (requires tmux, kitty, wezterm, or ghostty)"`.
+- [x] Run `shellcheck plugins/planning/scripts/launch-plan-review.sh` and fix any warnings.
+- [x] manual verify (skipped - not automatable): launch `bash plugins/planning/scripts/launch-plan-review.sh <some-plan.md>` inside a Ghostty window — split pane opens, revdiff loads, exits cleanly, annotations captured.
 
 ### Task 2: Add ghostty branch to plan-annotate.py open_editor
 
