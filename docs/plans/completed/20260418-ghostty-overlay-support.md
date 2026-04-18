@@ -218,8 +218,8 @@ The revdiff reference prepends `/usr/bin/env EDITOR=... VISUAL=...` to the launc
 - [x] Plugin versions bumped.
 
 ### Task 7: [Final] Move plan to completed
-- [ ] `mkdir -p docs/plans/completed`
-- [ ] Move this plan file to `docs/plans/completed/`.
+- [x] `mkdir -p docs/plans/completed`
+- [x] Move this plan file to `docs/plans/completed/`.
 
 ## Post-Completion
 *Items requiring manual intervention outside this session.*
