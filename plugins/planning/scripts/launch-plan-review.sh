@@ -86,7 +86,6 @@ if [ "${TERM_PROGRAM:-}" = "ghostty" ] && [ -z "${CMUX_SURFACE_ID:-}" ] && comma
     rm -f "$SENTINEL"
 
     LAUNCH_SCRIPT=$(mktemp /tmp/plan-review-launch-XXXXXX)
-    trap 'rm -f "$OUTPUT_FILE" "$SENTINEL" "$LAUNCH_SCRIPT"' EXIT
     cat > "$LAUNCH_SCRIPT" <<LAUNCHER
 #!/bin/sh
 $REVDIFF_CMD; touch '$SENTINEL'
@@ -108,6 +107,12 @@ on run argv
 end run
 APPLESCRIPT
     ); then
+        rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
+        exit 1
+    fi
+    # AppleScript can exit 0 with empty stdout on edge cases (e.g. no front
+    # window). Bail out rather than polling forever / running close on "".
+    if [ -z "$GHOSTTY_TERM_ID" ]; then
         rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
         exit 1
     fi

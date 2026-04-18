@@ -194,9 +194,11 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
 
         applescript = """on run argv
     set launchScript to item 1 of argv
+    set cwd to item 2 of argv
     tell application "Ghostty"
         set cfg to new surface configuration
         set command of cfg to launchScript
+        set initial working directory of cfg to cwd
         set wait after command of cfg to false
         set ft to focused terminal of selected tab of front window
         set newTerm to split ft direction down with configuration cfg
@@ -206,7 +208,7 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
 end run
 """
         result = subprocess.run(
-            ["osascript", "-", str(launch_script_path)],
+            ["osascript", "-", str(launch_script_path), str(Path.cwd())],
             input=applescript, text=True, capture_output=True,
         )
         if result.returncode != 0:
@@ -214,6 +216,12 @@ end run
             sentinel.unlink(missing_ok=True)
             return 1
         ghostty_term_id = result.stdout.strip()
+        if not ghostty_term_id:
+            # AppleScript succeeded but returned nothing — bail out rather
+            # than blocking forever or running the close script on empty id.
+            launch_script_path.unlink(missing_ok=True)
+            sentinel.unlink(missing_ok=True)
+            return 1
 
         while not sentinel.exists():
             time.sleep(0.3)

@@ -259,12 +259,21 @@ def open_editor(filepath: Path) -> int:
     """open file in $EDITOR via tmux popup, kitty overlay, wezterm split-pane, or ghostty split, blocking until editor closes.
     tries tmux first (if $TMUX is set), then kitty, then wezterm, then ghostty. returns non-zero if none is available."""
     editor = os.environ.get("EDITOR", "micro")
+    # resolve the first token of $EDITOR to an absolute path so that
+    # sh -c (used by kitty/wezterm/ghostty overlays) can find the binary
+    # even when /opt/homebrew/bin or similar dirs are not in sh's default PATH.
+    editor_parts = shlex.split(editor)
+    resolved = shutil.which(editor_parts[0])
+    if resolved:
+        editor_parts[0] = resolved
+    editor_cmd = " ".join(shlex.quote(p) for p in editor_parts)
 
     # tmux: display-popup -E blocks until the command exits, no sentinel needed
     if os.environ.get("TMUX") and shutil.which("tmux"):
         result = subprocess.run(
             ["tmux", "display-popup", "-E", "-w", "90%", "-h", "90%",
-             "-T", " Git Review ", "--", editor, str(filepath)],
+             "-T", " Git Review ", "--", "sh", "-c",
+             f'{editor_cmd} {shlex.quote(str(filepath))}'],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         return result.returncode
@@ -279,7 +288,7 @@ def open_editor(filepath: Path) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         cmd = ["kitty", "@", "--to", kitty_sock, "launch", "--type=overlay",
                f"--title=Git Review: {filepath.name}"]
         # target the kitty window where claude is running, not the active one
@@ -300,7 +309,7 @@ def open_editor(filepath: Path) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         subprocess.run(
             ["wezterm", "cli", "split-pane", "--bottom", "--percent", "80",
              "--pane-id", wezterm_pane, "--", "sh", "-c", wrapper],
@@ -323,7 +332,7 @@ def open_editor(filepath: Path) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
 
         launcher = tempfile.NamedTemporaryFile(
             mode="w", suffix=".sh", prefix="review-launch-", delete=False
@@ -335,9 +344,11 @@ def open_editor(filepath: Path) -> int:
 
         applescript = """on run argv
     set launchScript to item 1 of argv
+    set cwd to item 2 of argv
     tell application "Ghostty"
         set cfg to new surface configuration
         set command of cfg to launchScript
+        set initial working directory of cfg to cwd
         set wait after command of cfg to false
         set ft to focused terminal of selected tab of front window
         set newTerm to split ft direction down with configuration cfg
@@ -347,7 +358,7 @@ def open_editor(filepath: Path) -> int:
 end run
 """
         result = subprocess.run(
-            ["osascript", "-", str(launch_script_path)],
+            ["osascript", "-", str(launch_script_path), str(Path.cwd())],
             input=applescript, text=True, capture_output=True,
         )
         if result.returncode != 0:
@@ -355,6 +366,12 @@ end run
             sentinel.unlink(missing_ok=True)
             return 1
         ghostty_term_id = result.stdout.strip()
+        if not ghostty_term_id:
+            # AppleScript succeeded but returned nothing — bail out rather
+            # than blocking forever or running the close script on empty id.
+            launch_script_path.unlink(missing_ok=True)
+            sentinel.unlink(missing_ok=True)
+            return 1
 
         while not sentinel.exists():
             time.sleep(0.3)
