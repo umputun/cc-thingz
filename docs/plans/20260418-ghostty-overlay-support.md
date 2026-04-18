@@ -209,13 +209,13 @@ The revdiff reference prepends `/usr/bin/env EDITOR=... VISUAL=...` to the launc
 - [x] Do NOT change marketplace.json (no structural changes).
 
 ### Task 6: Verify acceptance criteria
-- [ ] All three scripts now detect Ghostty and open a split pane instead of erroring out.
-- [ ] Error message in all three scripts lists `ghostty` alongside tmux/kitty/wezterm.
-- [ ] Docstrings, references, and README are consistent and mention ghostty.
-- [ ] `shellcheck plugins/planning/scripts/launch-plan-review.sh` passes with no warnings.
-- [ ] `python3 plugins/planning/scripts/plan-annotate.py --test` still passes.
-- [ ] Grep-confirm there are no remaining "tmux, kitty, or wezterm" phrases that missed the update: `grep -rn "tmux, kitty" .` (excluding vendored files and completed plans).
-- [ ] Plugin versions bumped.
+- [x] All three scripts now detect Ghostty and open a split pane instead of erroring out.
+- [x] Error message in all three scripts lists `ghostty` alongside tmux/kitty/wezterm.
+- [x] Docstrings, references, and README are consistent and mention ghostty.
+- [x] `shellcheck plugins/planning/scripts/launch-plan-review.sh` passes with no warnings.
+- [x] `python3 plugins/planning/scripts/plan-annotate.py --test` still passes.
+- [x] Grep-confirm there are no remaining "tmux, kitty, or wezterm" phrases that missed the update: `grep -rn "tmux, kitty" .` (excluding vendored files and completed plans).
+- [x] Plugin versions bumped.
 
 ### Task 7: [Final] Move plan to completed
 - [ ] `mkdir -p docs/plans/completed`
