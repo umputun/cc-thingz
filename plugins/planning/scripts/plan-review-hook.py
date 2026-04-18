@@ -76,6 +76,13 @@ def try_revdiff(plan_content: str, plugin_root: str) -> str | None:
             capture_output=True, text=True, timeout=345600,
             env={**os.environ},
         )
+        # distinguish launcher failure from a successful review with zero annotations:
+        #   return None → caller falls back to plan-annotate.py (no overlay available,
+        #                 osascript error, empty term id, etc.)
+        #   return ""   → user reviewed the plan and added no annotations (approve)
+        #   return "<text>" → user added annotations (deny with feedback)
+        if result.returncode != 0:
+            return None
         annotations = result.stdout.strip()
         if not annotations:
             return ""

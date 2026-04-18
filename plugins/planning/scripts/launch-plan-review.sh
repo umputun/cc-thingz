@@ -124,6 +124,13 @@ APPLESCRIPT
         exit 1
     fi
 
+    # now that we have a valid term id, extend the trap to also close the
+    # split if the parent shell is interrupted (SIGINT/SIGTERM) before the
+    # explicit close AppleScript runs. `|| true` keeps the trap clean when
+    # the user already closed the pane manually.
+    # shellcheck disable=SC2064  # expand GHOSTTY_TERM_ID at trap-set time
+    trap "rm -f \"\$OUTPUT_FILE\" \"\$SENTINEL\" \"\$LAUNCH_SCRIPT\"; osascript -e 'tell application \"Ghostty\" to close terminal id $GHOSTTY_TERM_ID' >/dev/null 2>&1 || true" EXIT
+
     while [ ! -f "$SENTINEL" ]; do
         sleep 0.3
     done
