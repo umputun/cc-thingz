@@ -55,7 +55,18 @@ def make_response(decision: str, reason: str = "") -> None:
 
 
 def try_revdiff(plan_content: str, plugin_root: str) -> str | None:
-    """try reviewing plan with revdiff. returns annotations or None if revdiff unavailable."""
+    """try reviewing plan with revdiff.
+
+    returns:
+        None: revdiff unavailable, launcher missing, or no overlay terminal
+              (exit 127) → caller should fall back to plan-annotate.py
+        "":   plan reviewed with no annotations → caller should respond "ask"
+        str:  user annotations → caller should respond "deny" with this text
+
+    on launcher/runtime failure (non-zero, non-127 exit) this function emits
+    an "ask" response via make_response() and exits the process directly —
+    a tool failure should NOT block ExitPlanMode as if the plan were wrong.
+    """
     if not shutil.which("revdiff"):
         return None
 
@@ -78,19 +89,22 @@ def try_revdiff(plan_content: str, plugin_root: str) -> str | None:
         )
         # distinguish launcher outcomes:
         #   exit 127     → no overlay terminal available; fall back to plan-annotate.py
-        #   other non-0 → overlay was attempted but launcher/revdiff failed; surface
-        #                 as a deny reason so the user sees the actual error instead
-        #                 of a silent second review UI popping up
+        #   other non-0 → overlay attempted but launcher/revdiff failed; surface
+        #                 as "ask" so the user sees the tool error without the plan
+        #                 being wrongly rejected as needing revision
         #   exit 0, ""   → user reviewed the plan and added no annotations (approve)
         #   exit 0, text → user added annotations (deny with feedback)
         if result.returncode == 127:
             return None
         if result.returncode != 0:
             stderr_text = (result.stderr or "").strip()[:500] or "no stderr output"
-            return (
-                f"revdiff review failed (exit {result.returncode}): {stderr_text}\n\n"
-                "revise the plan or try again."
+            make_response(
+                "ask",
+                f"revdiff review failed (exit {result.returncode}): {stderr_text}",
             )
+            # make_response only sys.exits on "deny"; exit explicitly so main()
+            # doesn't continue and misinterpret this as user feedback.
+            sys.exit(0)
         annotations = result.stdout.strip()
         if not annotations:
             return ""
