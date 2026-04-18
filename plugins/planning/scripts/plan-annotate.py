@@ -249,7 +249,7 @@ def run_file_mode(plan_file: Path) -> None:
 
     try:
         if open_editor(tmp_path, target_window=False) != 0:
-            print("error: no overlay terminal available (requires tmux, kitty, or wezterm)", file=sys.stderr)
+            print("error: no overlay terminal available (requires tmux, kitty, wezterm, or ghostty)", file=sys.stderr)
             sys.exit(1)
 
         edited_content = tmp_path.read_text()
@@ -275,7 +275,7 @@ def run_hook_mode() -> None:
 
     try:
         if open_editor(tmp_path) != 0:
-            print(make_response("ask", "no overlay terminal available (requires tmux, kitty, or wezterm), skipping plan annotation"))
+            print(make_response("ask", "no overlay terminal available (requires tmux, kitty, wezterm, or ghostty), skipping plan annotation"))
             return
 
         edited_content = tmp_path.read_text()

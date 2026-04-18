@@ -17,7 +17,7 @@ Interactive annotation-based code review using editor overlays.
 ## How It Works
 
 1. Script generates a cleaned-up diff file (friendly headers, no technical noise)
-2. Opens in `$EDITOR` via tmux popup, kitty overlay, or wezterm split-pane
+2. Opens in `$EDITOR` via tmux popup, kitty overlay, wezterm split-pane, or ghostty split
 3. User adds annotations (comments, change requests) directly in the file
 4. Script returns user's annotations as a git diff
 5. Claude reads annotations, fixes code in the real repo
@@ -101,7 +101,8 @@ User: "review my changes"
 
 ## Requirements
 
-- tmux, kitty, or wezterm terminal (for editor overlay)
+- tmux, kitty, wezterm, or ghostty terminal (for editor overlay)
 - `$EDITOR` set (defaults to micro)
 - git
 - kitty users: kitty.conf must have `allow_remote_control yes` and `listen_on unix:/tmp/kitty-$KITTY_PID`
+- ghostty users: requires Ghostty 1.3.0+ on macOS (uses AppleScript)

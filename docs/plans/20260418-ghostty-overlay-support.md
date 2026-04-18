@@ -188,15 +188,15 @@ The revdiff reference prepends `/usr/bin/env EDITOR=... VISUAL=...` to the launc
 - Modify: `plugins/planning/scripts/plan-review-hook.py` (docstring mentions terminals)
 - Modify: `plugins/review/skills/git-review/SKILL.md` (if it mentions terminal requirements)
 
-- [ ] Run a broader grep to catch all phrasings (comma-separated, slash-separated, "or"): `grep -rEn "tmux[, /]|kitty[, /]|wezterm[, /]" plugins/ README.md` — update each hit to include ghostty.
-- [ ] Explicit docstring surfaces to update (line numbers may shift as Tasks 2/3 land; reference by section):
+- [x] Run a broader grep to catch all phrasings (comma-separated, slash-separated, "or"): `grep -rEn "tmux[, /]|kitty[, /]|wezterm[, /]" plugins/ README.md` — update each hit to include ghostty.
+- [x] Explicit docstring surfaces to update (line numbers may shift as Tasks 2/3 land; reference by section):
   - `plan-annotate.py` module docstring: the `(tmux or kitty)` parenthetical in the first paragraph, the `terminal priority:` arrow list (`tmux display-popup → kitty overlay → wezterm split-pane → ghostty split → error`), the `requirements` list, and the `limitations` list (`does not work in plain terminals`).
   - `git-review.py` module docstring: the `tmux/kitty/wezterm overlay` slash-separated form.
   - `plan-review-hook.py` docstring `requirements` line: `tmux, kitty, wezterm, or ghostty terminal`.
-- [ ] In `README.md`, find the planning and review plugin descriptions; update terminal requirement phrasing.
-- [ ] Ensure wording is consistent across all files (use the same canonical phrase: `tmux, kitty, wezterm, or ghostty`).
-- [ ] Add a brief one-line note in the appropriate reference/README that Ghostty requires 1.3.0+ on macOS. Place it where other terminal-specific caveats (e.g., kitty `allow_remote_control`) already live.
-- [ ] Final verification grep: `grep -rEn "tmux[, /]|kitty[, /]|wezterm[, /]" plugins/ README.md` should show ghostty included in every user-facing hit (vendored files, completed plans, and git history references are excluded).
+- [x] In `README.md`, find the planning and review plugin descriptions; update terminal requirement phrasing.
+- [x] Ensure wording is consistent across all files (use the same canonical phrase: `tmux, kitty, wezterm, or ghostty`).
+- [x] Add a brief one-line note in the appropriate reference/README that Ghostty requires 1.3.0+ on macOS. Place it where other terminal-specific caveats (e.g., kitty `allow_remote_control`) already live.
+- [x] Final verification grep: `grep -rEn "tmux[, /]|kitty[, /]|wezterm[, /]" plugins/ README.md` should show ghostty included in every user-facing hit (vendored files, completed plans, and git history references are excluded).
 
 ### Task 5: Bump plugin versions
 

@@ -179,7 +179,7 @@ PR review, interactive git diff annotation review, and writing style tools. Inst
 
 Uses `gh` CLI for all GitHub operations and git worktrees to avoid disrupting the current checkout.
 
-**git-review** — interactive annotation-based code review. Generates a cleaned-up diff, opens it in `$EDITOR` via tmux popup, kitty overlay, or wezterm split-pane. You annotate directly in the diff, and the script returns your changes as a git diff. Claude reads annotations, fixes code, regenerates the diff, and loops until you close the editor without changes. Supports auto-detection of uncommitted changes or branch diffs.
+**git-review** — interactive annotation-based code review. Generates a cleaned-up diff, opens it in `$EDITOR` via tmux popup, kitty overlay, wezterm split-pane, or ghostty split. You annotate directly in the diff, and the script returns your changes as a git diff. Claude reads annotations, fixes code, regenerates the diff, and loops until you close the editor without changes. Supports auto-detection of uncommitted changes or branch diffs.
 
 Run tests: `python3 plugins/review/skills/git-review/scripts/git-review.py --test`
 
@@ -203,17 +203,19 @@ Structured implementation planning with interactive annotation review and autono
 - **Step 2** — creates the plan file with tasks, file lists, test requirements, and progress tracking
 - **Step 3** — offers interactive review (opens plan in `$EDITOR` via plan-annotate), auto review, start implementation, or done
 
-**plan-annotate.py** — interactive plan annotation tool. Opens plans in your `$EDITOR` via a terminal overlay (tmux popup, kitty overlay, or wezterm split-pane), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. Two modes:
+**plan-annotate.py** — interactive plan annotation tool. Opens plans in your `$EDITOR` via a terminal overlay (tmux popup, kitty overlay, wezterm split-pane, or ghostty split), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. Two modes:
 
 - *Hook mode* (default) — intercepts `ExitPlanMode`, opens plan in editor, denies tool call with diff if changes made, forcing revision loop
 - *File mode* (`plan-annotate.py <plan-file>`) — outputs unified diff to stdout for integration with custom workflows
 
-Requirements: tmux, kitty, or wezterm terminal, `$EDITOR` (defaults to `micro`). **Kitty users** must enable remote control in `kitty.conf`:
+Requirements: tmux, kitty, wezterm, or ghostty terminal, `$EDITOR` (defaults to `micro`). **Kitty users** must enable remote control in `kitty.conf`:
 
 ```
 allow_remote_control yes
 listen_on unix:/tmp/kitty-$KITTY_PID
 ```
+
+**Ghostty users**: requires Ghostty 1.3.0+ on macOS (uses AppleScript to create splits).
 
 Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
 

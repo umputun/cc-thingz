@@ -12,7 +12,7 @@ returns PreToolUse hook JSON response with permissionDecision:
 
 requirements:
   - revdiff (preferred) or $EDITOR (fallback)
-  - tmux, kitty, or wezterm terminal
+  - tmux, kitty, wezterm, or ghostty terminal
 """
 
 import json
