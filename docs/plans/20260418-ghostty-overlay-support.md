@@ -204,9 +204,9 @@ The revdiff reference prepends `/usr/bin/env EDITOR=... VISUAL=...` to the launc
 - Modify: `plugins/planning/.claude-plugin/plugin.json`
 - Modify: `plugins/review/.claude-plugin/plugin.json`
 
-- [ ] Bump `plugins/planning/.claude-plugin/plugin.json` version `3.4.0` → `3.5.0` (minor: new terminal support = new feature per CLAUDE.md versioning guidance).
-- [ ] Bump `plugins/review/.claude-plugin/plugin.json` version `2.2.1` → `2.3.0` (same reasoning).
-- [ ] Do NOT change marketplace.json (no structural changes).
+- [x] Bump `plugins/planning/.claude-plugin/plugin.json` version `3.4.0` → `3.5.0` (minor: new terminal support = new feature per CLAUDE.md versioning guidance).
+- [x] Bump `plugins/review/.claude-plugin/plugin.json` version `2.2.1` → `2.3.0` (same reasoning).
+- [x] Do NOT change marketplace.json (no structural changes).
 
 ### Task 6: Verify acceptance criteria
 - [ ] All three scripts now detect Ghostty and open a split pane instead of erroring out.
