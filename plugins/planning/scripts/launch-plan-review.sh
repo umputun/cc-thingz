@@ -86,6 +86,11 @@ if [ "${TERM_PROGRAM:-}" = "ghostty" ] && [ -z "${CMUX_SURFACE_ID:-}" ] && comma
     rm -f "$SENTINEL"
 
     LAUNCH_SCRIPT=$(mktemp /tmp/plan-review-launch-XXXXXX)
+    # extend the EXIT trap so a SIGINT during polling or any unexpected
+    # failure (e.g. chmod failing under set -e) doesn't leak temp files.
+    # explicit rm -f calls below remain as the happy/error-path cleanup
+    # and are idempotent with this trap.
+    trap 'rm -f "$OUTPUT_FILE" "$SENTINEL" "$LAUNCH_SCRIPT"' EXIT
     cat > "$LAUNCH_SCRIPT" <<LAUNCHER
 #!/bin/sh
 $REVDIFF_CMD; touch '$SENTINEL'

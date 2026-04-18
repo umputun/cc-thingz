@@ -111,7 +111,9 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
     # resolve the first token of $EDITOR to an absolute path so that
     # sh -c (used by kitty/wezterm overlays) can find the binary even
     # when /opt/homebrew/bin or similar dirs are not in sh's default PATH.
-    editor_parts = shlex.split(editor)
+    # fall back to 'micro' if $EDITOR is unset, empty, or whitespace-only —
+    # shlex.split returns [] for those, which would crash on indexing.
+    editor_parts = shlex.split(editor) or ["micro"]
     resolved = shutil.which(editor_parts[0])
     if resolved:
         editor_parts[0] = resolved
@@ -207,37 +209,38 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
     end tell
 end run
 """
-        result = subprocess.run(
-            ["osascript", "-", str(launch_script_path), str(Path.cwd())],
-            input=applescript, text=True, capture_output=True,
-        )
-        if result.returncode != 0:
-            launch_script_path.unlink(missing_ok=True)
-            sentinel.unlink(missing_ok=True)
-            return 1
-        ghostty_term_id = result.stdout.strip()
-        if not ghostty_term_id:
-            # AppleScript succeeded but returned nothing — bail out rather
-            # than blocking forever or running the close script on empty id.
-            launch_script_path.unlink(missing_ok=True)
-            sentinel.unlink(missing_ok=True)
-            return 1
-
-        while not sentinel.exists():
-            time.sleep(0.3)
-
-        # dismiss Ghostty's default "press any key to close" prompt
         close_applescript = """on run argv
     tell application "Ghostty" to close terminal id (item 1 of argv)
 end run
 """
-        subprocess.run(
-            ["osascript", "-", ghostty_term_id],
-            input=close_applescript, text=True, capture_output=True,
-        )
-        sentinel.unlink(missing_ok=True)
-        launch_script_path.unlink(missing_ok=True)
-        return 0
+        ghostty_term_id = ""
+        try:
+            result = subprocess.run(
+                ["osascript", "-", str(launch_script_path), str(Path.cwd())],
+                input=applescript, text=True, capture_output=True,
+            )
+            if result.returncode != 0:
+                return 1
+            ghostty_term_id = result.stdout.strip()
+            if not ghostty_term_id:
+                # AppleScript succeeded but returned nothing — bail out rather
+                # than blocking forever or running the close script on empty id.
+                return 1
+
+            while not sentinel.exists():
+                time.sleep(0.3)
+            return 0
+        finally:
+            # best-effort cleanup: ensure sentinel, launcher script, and the
+            # Ghostty split pane don't leak on Ctrl-C or any other exception.
+            if ghostty_term_id:
+                subprocess.run(
+                    ["osascript", "-", ghostty_term_id],
+                    input=close_applescript, text=True, capture_output=True,
+                    check=False,
+                )
+            sentinel.unlink(missing_ok=True)
+            launch_script_path.unlink(missing_ok=True)
 
     return 1
 
