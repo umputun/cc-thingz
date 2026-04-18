@@ -170,14 +170,14 @@ The revdiff reference prepends `/usr/bin/env EDITOR=... VISUAL=...` to the launc
 **Files:**
 - Modify: `plugins/review/skills/git-review/scripts/git-review.py`
 
-- [ ] Add ghostty branch inside `open_editor()` after the wezterm branch, before `return 1` (around line 312).
-- [ ] Mirror the Task 2 implementation — same cmux-guarded gate, launcher file, osascript pattern.
-- [ ] Use prefix `"review-done-"` for sentinel to match existing git-review.py naming (NOT `plan-done-` from Task 2).
-- [ ] Set AppleScript title/context to match — no title is shown for Ghostty splits, so no title parameter needed.
-- [ ] Update the function docstring (line 258): `tries tmux first (if $TMUX is set), then kitty, then wezterm, then ghostty.`.
-- [ ] Update the error message in `run_review` (line 373): `"error: no overlay terminal available (requires tmux, kitty, wezterm, or ghostty)"`.
-- [ ] Run any existing tests: there are no `--test` flag tests in git-review.py beyond `run_tests()` — confirm by inspection.
-- [ ] Manual verify: inside a git repo with changes, launch `/review:git-review` from Ghostty; editor opens in split pane, annotations diff is printed on close.
+- [x] Add ghostty branch inside `open_editor()` after the wezterm branch, before `return 1` (around line 312).
+- [x] Mirror the Task 2 implementation — same cmux-guarded gate, launcher file, osascript pattern.
+- [x] Use prefix `"review-done-"` for sentinel to match existing git-review.py naming (NOT `plan-done-` from Task 2).
+- [x] Set AppleScript title/context to match — no title is shown for Ghostty splits, so no title parameter needed.
+- [x] Update the function docstring (line 258): `tries tmux first (if $TMUX is set), then kitty, then wezterm, then ghostty.`.
+- [x] Update the error message in `run_review` (line 373): `"error: no overlay terminal available (requires tmux, kitty, wezterm, or ghostty)"`.
+- [x] Run any existing tests: there are no `--test` flag tests in git-review.py beyond `run_tests()` — confirm by inspection.
+- [x] manual verify (skipped - not automatable): inside a git repo with changes, launch `/review:git-review` from Ghostty; editor opens in split pane, annotations diff is printed on close.
 
 ### Task 4: Update user-facing documentation
 

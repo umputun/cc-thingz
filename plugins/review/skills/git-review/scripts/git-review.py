@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """git-review.py - interactive git diff annotation tool.
 
-generates a cleaned-up diff file, opens it in $EDITOR via tmux/kitty/wezterm overlay,
+generates a cleaned-up diff file, opens it in $EDITOR via tmux/kitty/wezterm/ghostty overlay,
 and tracks user annotations via a git repo in /tmp. returns the user's
 annotations (additions/edits) as a git diff on stdout.
 
@@ -20,10 +20,11 @@ each invocation regenerates the cleaned diff, commits it, opens the editor,
 and returns `git diff` output showing what the user changed.
 
 requirements:
-    - tmux, kitty, or wezterm terminal (tmux tried first, then kitty, then wezterm)
+    - tmux, kitty, wezterm, or ghostty terminal (tmux tried first, then kitty, then wezterm, then ghostty)
     - $EDITOR set (defaults to micro)
     - git
     - kitty users: kitty.conf must have allow_remote_control and listen_on configured
+    - ghostty users: requires Ghostty 1.3.0+ on macOS (uses AppleScript)
 """
 
 import os
@@ -255,8 +256,8 @@ def setup_review_repo(review_dir: Path, content: str) -> None:
 
 
 def open_editor(filepath: Path) -> int:
-    """open file in $EDITOR via tmux popup, kitty overlay, or wezterm split-pane, blocking until editor closes.
-    tries tmux first (if $TMUX is set), then kitty, then wezterm. returns non-zero if none is available."""
+    """open file in $EDITOR via tmux popup, kitty overlay, wezterm split-pane, or ghostty split, blocking until editor closes.
+    tries tmux first (if $TMUX is set), then kitty, then wezterm, then ghostty. returns non-zero if none is available."""
     editor = os.environ.get("EDITOR", "micro")
 
     # tmux: display-popup -E blocks until the command exits, no sentinel needed
@@ -308,6 +309,67 @@ def open_editor(filepath: Path) -> int:
         while not sentinel.exists():
             time.sleep(0.3)
         sentinel.unlink(missing_ok=True)
+        return 0
+
+    # ghostty: split pane via AppleScript (macOS only, requires Ghostty 1.3.0+).
+    # cmux sets TERM_PROGRAM=ghostty too; guard on CMUX_SURFACE_ID to avoid
+    # misrouting a cmux session into a real-Ghostty AppleScript split.
+    if (
+        os.environ.get("TERM_PROGRAM") == "ghostty"
+        and not os.environ.get("CMUX_SURFACE_ID")
+        and shutil.which("osascript")
+    ):
+        fd, sentinel_path = tempfile.mkstemp(prefix="review-done-")
+        os.close(fd)
+        os.unlink(sentinel_path)
+        sentinel = Path(sentinel_path)
+        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+
+        launcher = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".sh", prefix="review-launch-", delete=False
+        )
+        launcher.write(f"#!/bin/sh\n{wrapper}\n")
+        launcher.close()
+        launch_script_path = Path(launcher.name)
+        os.chmod(launch_script_path, 0o755)
+
+        applescript = """on run argv
+    set launchScript to item 1 of argv
+    tell application "Ghostty"
+        set cfg to new surface configuration
+        set command of cfg to launchScript
+        set wait after command of cfg to false
+        set ft to focused terminal of selected tab of front window
+        set newTerm to split ft direction down with configuration cfg
+        perform action "toggle_split_zoom" on newTerm
+        return id of newTerm
+    end tell
+end run
+"""
+        result = subprocess.run(
+            ["osascript", "-", str(launch_script_path)],
+            input=applescript, text=True, capture_output=True,
+        )
+        if result.returncode != 0:
+            launch_script_path.unlink(missing_ok=True)
+            sentinel.unlink(missing_ok=True)
+            return 1
+        ghostty_term_id = result.stdout.strip()
+
+        while not sentinel.exists():
+            time.sleep(0.3)
+
+        # dismiss Ghostty's default "press any key to close" prompt
+        close_applescript = """on run argv
+    tell application "Ghostty" to close terminal id (item 1 of argv)
+end run
+"""
+        subprocess.run(
+            ["osascript", "-", ghostty_term_id],
+            input=close_applescript, text=True, capture_output=True,
+        )
+        sentinel.unlink(missing_ok=True)
+        launch_script_path.unlink(missing_ok=True)
         return 0
 
     return 1
@@ -370,7 +432,7 @@ def run_review(base_ref: str | None = None, branch: str | None = None) -> None:
 
     review_file = review_dir / "review.diff"
     if open_editor(review_file) != 0:
-        print("error: no overlay terminal available (requires tmux, kitty, or wezterm)", file=sys.stderr)
+        print("error: no overlay terminal available (requires tmux, kitty, wezterm, or ghostty)", file=sys.stderr)
         sys.exit(1)
 
     # get annotations
