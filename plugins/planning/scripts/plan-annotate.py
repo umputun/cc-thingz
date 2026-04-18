@@ -4,10 +4,10 @@
 interactive plan review hook that lets you annotate Claude's plans directly
 in your editor before approving them. when Claude calls ExitPlanMode, this
 hook intercepts the call, opens the plan in $EDITOR via a terminal overlay
-(tmux, kitty, wezterm, or ghostty), and waits for you to review/edit. if you make changes,
-the hook computes a unified diff and sends it back to Claude as a denial
-reason, forcing Claude to revise the plan based on your annotations. if
-you make no changes, the normal approval dialog appears.
+(tmux, kitty, wezterm, or ghostty), and waits for you to review/edit. if
+you make changes, the hook computes a unified diff and sends it back to
+Claude as a denial reason, forcing Claude to revise the plan based on your
+annotations. if you make no changes, the normal approval dialog appears.
 
 this creates a feedback loop: annotate → Claude revises → annotate again →
 until you're satisfied and close the editor without changes.
@@ -26,19 +26,20 @@ returns PreToolUse hook JSON response with permissionDecision:
   - "deny" → changes detected, unified diff sent as denial reason
 
 requirements:
-  - tmux, kitty, wezterm, or ghostty terminal (tmux tried first, then kitty, then wezterm, then ghostty)
+  - tmux, kitty, wezterm, or ghostty terminal (tried in that order)
   - $EDITOR set (defaults to micro)
-  - kitty users: kitty.conf must have allow_remote_control and listen_on configured:
+  - kitty users: kitty.conf must have allow_remote_control and listen_on:
       allow_remote_control yes
       listen_on unix:/tmp/kitty-$KITTY_PID
   - ghostty users: requires Ghostty 1.3.0+ on macOS (uses AppleScript)
 
-terminal priority: tmux display-popup → kitty overlay → wezterm split-pane → ghostty split → error
+terminal priority: tmux display-popup → kitty overlay →
+                   wezterm split-pane → ghostty split → error
 
 limitations:
-  - requires tmux, kitty, wezterm, or ghostty - without any, returns error (no annotation)
+  - requires one of the supported terminals; otherwise returns an error
   - does not work in plain terminals (iTerm2, Terminal.app, etc.)
-  - kitty requires KITTY_LISTEN_ON env var (set by kitty when listen_on is configured)
+  - kitty requires KITTY_LISTEN_ON env var (set when listen_on is on)
   - the hook blocks until the editor closes; timeout should be set high
   - plan content comes from Claude's ExitPlanMode call, not from the plan
     file on disk - if you edit the file on disk separately, those changes
@@ -103,10 +104,13 @@ def get_diff(original: str, edited: str) -> str:
 
 
 def open_editor(filepath: Path, target_window: bool = True) -> int:
-    """open file in $EDITOR via tmux popup, kitty overlay, wezterm split-pane, or ghostty split, blocking until editor closes.
-    tries tmux first (if $TMUX is set), then kitty, then wezterm, then ghostty. returns non-zero if none is available.
-    when target_window is True (hook mode), targets the kitty window from KITTY_WINDOW_ID.
-    when False (file mode), opens in the currently focused window."""
+    """open file in $EDITOR via tmux popup, kitty overlay, wezterm
+    split-pane, or ghostty split, blocking until editor closes. tries
+    tmux first (if $TMUX is set), then kitty, then wezterm, then
+    ghostty. returns non-zero if none is available. when target_window
+    is True (hook mode), targets the kitty window from
+    KITTY_WINDOW_ID. when False (file mode), opens in the currently
+    focused window."""
     editor = os.environ.get("EDITOR", "micro")
     # resolve the first token of $EDITOR to an absolute path so that
     # sh -c (used by kitty/wezterm overlays) can find the binary even

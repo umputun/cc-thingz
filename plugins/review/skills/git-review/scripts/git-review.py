@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """git-review.py - interactive git diff annotation tool.
 
-generates a cleaned-up diff file, opens it in $EDITOR via tmux/kitty/wezterm/ghostty overlay,
-and tracks user annotations via a git repo in /tmp. returns the user's
-annotations (additions/edits) as a git diff on stdout.
+generates a cleaned-up diff file, opens it in $EDITOR via a
+tmux/kitty/wezterm/ghostty overlay, and tracks user annotations via a
+git repo in /tmp. returns the user's annotations (additions/edits) as a
+git diff on stdout.
 
 usage:
     git-review.py                          # auto-detect: uncommitted or branch vs default
@@ -20,10 +21,11 @@ each invocation regenerates the cleaned diff, commits it, opens the editor,
 and returns `git diff` output showing what the user changed.
 
 requirements:
-    - tmux, kitty, wezterm, or ghostty terminal (tmux tried first, then kitty, then wezterm, then ghostty)
+    - tmux, kitty, wezterm, or ghostty terminal (tried in that order)
     - $EDITOR set (defaults to micro)
     - git
-    - kitty users: kitty.conf must have allow_remote_control and listen_on configured
+    - kitty users: kitty.conf must have allow_remote_control and
+      listen_on configured
     - ghostty users: requires Ghostty 1.3.0+ on macOS (uses AppleScript)
 """
 
@@ -256,8 +258,10 @@ def setup_review_repo(review_dir: Path, content: str) -> None:
 
 
 def open_editor(filepath: Path) -> int:
-    """open file in $EDITOR via tmux popup, kitty overlay, wezterm split-pane, or ghostty split, blocking until editor closes.
-    tries tmux first (if $TMUX is set), then kitty, then wezterm, then ghostty. returns non-zero if none is available."""
+    """open file in $EDITOR via tmux popup, kitty overlay, wezterm
+    split-pane, or ghostty split, blocking until editor closes. tries
+    tmux first (if $TMUX is set), then kitty, then wezterm, then
+    ghostty. returns non-zero if none is available."""
     editor = os.environ.get("EDITOR", "micro")
     # resolve the first token of $EDITOR to an absolute path so that
     # sh -c (used by kitty/wezterm/ghostty overlays) can find the binary

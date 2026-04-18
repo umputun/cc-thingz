@@ -97,12 +97,14 @@ $REVDIFF_CMD; touch '$SENTINEL'
 LAUNCHER
     chmod +x "$LAUNCH_SCRIPT"
 
-    if ! GHOSTTY_TERM_ID=$(osascript - "$LAUNCH_SCRIPT" <<'APPLESCRIPT'
+    if ! GHOSTTY_TERM_ID=$(osascript - "$LAUNCH_SCRIPT" "$PWD" <<'APPLESCRIPT'
 on run argv
     set launchScript to item 1 of argv
+    set cwd to item 2 of argv
     tell application "Ghostty"
         set cfg to new surface configuration
         set command of cfg to launchScript
+        set initial working directory of cfg to cwd
         set wait after command of cfg to false
         set ft to focused terminal of selected tab of front window
         set newTerm to split ft direction down with configuration cfg
