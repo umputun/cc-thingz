@@ -341,5 +341,5 @@ LAUNCHER
     exit 0
 fi
 
-echo "error: no overlay terminal available (requires tmux, zellij, kitty, wezterm, cmux, ghostty, iTerm2, or emacs vterm)" >&2
+echo "error: no overlay terminal available (requires tmux, zellij, kitty, wezterm, kaku, cmux, ghostty, iTerm2, or emacs vterm)" >&2
 exit 1
