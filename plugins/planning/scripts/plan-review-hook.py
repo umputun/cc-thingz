@@ -12,7 +12,9 @@ returns PreToolUse hook JSON response with permissionDecision:
 
 requirements:
   - revdiff (preferred) or $EDITOR (fallback)
-  - tmux, kitty, or wezterm terminal
+  - revdiff path: tmux, zellij, kitty, wezterm, kaku, cmux, ghostty,
+    iTerm2, or emacs vterm
+  - $EDITOR fallback (plan-annotate.py): tmux, kitty, or wezterm
 """
 
 import json
