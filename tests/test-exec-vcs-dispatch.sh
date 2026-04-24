@@ -174,24 +174,58 @@ make_git_repo "$GIT_MASTER" master
 output="$(cd "$GIT_MASTER" && bash "$DETECT_BRANCH")"
 assert_output "git repo on master outputs 'master'" "master" "$output"
 
-# test 3: hg repo -> outputs default
+# test 3: vanilla hg repo with no remote refs -> outputs 'default' fallback
 if [ "$HG_AVAILABLE" -eq 1 ]; then
     echo ""
-    echo "test 3: hg repo outputs 'default'"
+    echo "test 3: hg repo with no remote/<name> refs falls back to 'default'"
     HG_REPO="$(mk_tmp)"
     make_hg_repo "$HG_REPO"
     output="$(cd "$HG_REPO" && bash "$DETECT_BRANCH")"
-    assert_output "hg repo outputs 'default'" "default" "$output"
+    assert_output "hg repo without remote refs outputs 'default'" "default" "$output"
 
-    # test 3b: hg repo with a named branch still outputs 'default' (detect-branch.sh reports
-    # the repo's DEFAULT branch name, not the current one — mirrors git's semantic)
+    # test 3b: hg repo that exposes remote/master as a revset -> outputs 'remote/master'.
+    # vanilla hg does not ship a remote-tracking-ref layout out of the box, so we
+    # simulate one via a [revsetalias] entry that resolves remote/master to an
+    # existing bookmark. the patched do_hg probes `present(remote/<name>)`, which
+    # accepts any revset that resolves, so the alias is a faithful stand-in for
+    # modern-Mercurial environments that expose remote-tracking refs natively.
     echo ""
-    echo "test 3b: hg repo on a named branch still outputs 'default'"
-    HG_NAMED="$(mk_tmp)"
-    make_hg_repo "$HG_NAMED"
-    (cd "$HG_NAMED" && hg branch my-feature >/dev/null)
-    output="$(cd "$HG_NAMED" && bash "$DETECT_BRANCH")"
-    assert_output "hg repo on named branch outputs 'default'" "default" "$output"
+    echo "test 3b: hg repo with remote/master as a revset outputs 'remote/master'"
+    HG_REMOTE_MASTER="$(mk_tmp)"
+    make_hg_repo "$HG_REMOTE_MASTER"
+    (
+        cd "$HG_REMOTE_MASTER"
+        cat >>.hg/hgrc <<'HGRC'
+[revsetalias]
+remote/master = bookmark("master")
+HGRC
+        echo seed >seed.txt
+        hg add seed.txt >/dev/null
+        hg commit -m seed >/dev/null
+        hg book master >/dev/null
+    )
+    output="$(cd "$HG_REMOTE_MASTER" && bash "$DETECT_BRANCH")"
+    assert_output "hg repo with remote/master outputs 'remote/master'" "remote/master" "$output"
+
+    # test 3c: hg repo with remote/main but not remote/master -> outputs 'remote/main'
+    # exercises the candidate-order fallthrough when the first candidate is absent.
+    echo ""
+    echo "test 3c: hg repo with only remote/main outputs 'remote/main'"
+    HG_REMOTE_MAIN="$(mk_tmp)"
+    make_hg_repo "$HG_REMOTE_MAIN"
+    (
+        cd "$HG_REMOTE_MAIN"
+        cat >>.hg/hgrc <<'HGRC'
+[revsetalias]
+remote/main = bookmark("main")
+HGRC
+        echo seed >seed.txt
+        hg add seed.txt >/dev/null
+        hg commit -m seed >/dev/null
+        hg book main >/dev/null
+    )
+    output="$(cd "$HG_REMOTE_MAIN" && bash "$DETECT_BRANCH")"
+    assert_output "hg repo with only remote/main outputs 'remote/main'" "remote/main" "$output"
 fi
 
 echo ""
@@ -223,12 +257,12 @@ current="$(git -C "$GIT_CB_FEAT" branch --show-current)"
 assert_output "git/existing-feature: still on existing-feature" "existing-feature" "$current"
 
 if [ "$HG_AVAILABLE" -eq 1 ]; then
-    # test 6: hg repo on default with dated plan -> creates branch, outputs name
+    # test 6: hg repo with no active bookmark -> creates bookmark, outputs derived name
     echo ""
-    echo "test 6: hg repo on default, dated plan -> sets branch, outputs derived name"
+    echo "test 6: hg repo no active bookmark -> creates bookmark, outputs derived name"
     HG_CB_DEFAULT="$(mk_tmp)"
     make_hg_repo "$HG_CB_DEFAULT"
-    # seed one commit so 'default' is a real branch head
+    # seed one commit so there's a parent to attach the bookmark to
     (
         cd "$HG_CB_DEFAULT"
         echo "seed" >seed.txt
@@ -236,13 +270,16 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
         hg commit -m "seed" >/dev/null
     )
     output="$(cd "$HG_CB_DEFAULT" && bash "$CREATE_BRANCH" "$PLAN_FILE_DATED" 2>/dev/null | tail -n 1)"
-    assert_output "hg/default: outputs derived branch name" "$EXPECTED_DERIVED_BRANCH" "$output"
-    current_hg="$(cd "$HG_CB_DEFAULT" && hg branch)"
-    assert_output "hg/default: hg branch is set to derived name" "$EXPECTED_DERIVED_BRANCH" "$current_hg"
+    assert_output "hg/no-active: outputs derived branch name" "$EXPECTED_DERIVED_BRANCH" "$output"
+    # verify the bookmark was created and is now active
+    book_list="$(cd "$HG_CB_DEFAULT" && hg book --template '{bookmark}\n')"
+    assert_contains "hg/no-active: bookmark created with derived name" "$book_list" "$EXPECTED_DERIVED_BRANCH"
+    active="$(cd "$HG_CB_DEFAULT" && hg log -r . --template '{activebookmark}\n')"
+    assert_output "hg/no-active: new bookmark is active" "$EXPECTED_DERIVED_BRANCH" "$active"
 
-    # test 7: hg repo already on a named branch -> outputs current, no change
+    # test 7: hg repo already on a non-default bookmark -> outputs current, does NOT create derived bookmark
     echo ""
-    echo "test 7: hg repo already on my-branch -> outputs current branch"
+    echo "test 7: hg repo already on my-branch -> outputs current, does not create derived"
     HG_CB_ON_BRANCH="$(mk_tmp)"
     make_hg_repo "$HG_CB_ON_BRANCH"
     (
@@ -250,17 +287,20 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
         echo "seed" >seed.txt
         hg add seed.txt >/dev/null
         hg commit -m "seed" >/dev/null
-        hg branch my-branch >/dev/null
+        hg book my-branch >/dev/null
     )
     output="$(cd "$HG_CB_ON_BRANCH" && bash "$CREATE_BRANCH" "$PLAN_FILE_DATED" 2>/dev/null | tail -n 1)"
-    assert_output "hg/my-branch: outputs current branch" "my-branch" "$output"
-    current_hg="$(cd "$HG_CB_ON_BRANCH" && hg branch)"
-    assert_output "hg/my-branch: still on my-branch" "my-branch" "$current_hg"
+    assert_output "hg/my-branch: outputs current bookmark" "my-branch" "$output"
+    active="$(cd "$HG_CB_ON_BRANCH" && hg log -r . --template '{activebookmark}\n')"
+    assert_output "hg/my-branch: still on my-branch" "my-branch" "$active"
+    # derived bookmark must NOT have been created
+    book_list="$(cd "$HG_CB_ON_BRANCH" && hg book --template '{bookmark}\n')"
+    assert_not_contains "hg/my-branch: derived bookmark not created" "$book_list" "$EXPECTED_DERIVED_BRANCH"
 
-    # test 8: hg repo re-run with branch already committed (partial-run recovery)
-    # — must use 'hg update' rather than 'hg branch' to avoid 'branch already exists' abort
+    # test 8: hg repo with existing inactive bookmark (partial-run recovery)
+    # -- must 'hg update' it, not 'hg book' again (bookmark already exists)
     echo ""
-    echo "test 8: hg repo re-run with branch already existing -> hg update, outputs name"
+    echo "test 8: hg repo with inactive derived bookmark -> hg update activates it"
     HG_CB_REENTER="$(mk_tmp)"
     make_hg_repo "$HG_CB_REENTER"
     (
@@ -268,29 +308,29 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
         echo "seed" >seed.txt
         hg add seed.txt >/dev/null
         hg commit -m "seed" >/dev/null
-        # create the feature branch with a commit so it shows up in 'hg branches'
-        hg branch "$EXPECTED_DERIVED_BRANCH" >/dev/null
-        echo "feat" >feat.txt
-        hg add feat.txt >/dev/null
-        hg commit -m "feat commit" >/dev/null
-        # switch back to default, simulating a partial run that needs to resume
-        hg update default >/dev/null
+        # create the derived-name bookmark, then deactivate it to simulate
+        # a prior partial run leaving the bookmark but no active selection
+        hg book "$EXPECTED_DERIVED_BRANCH" >/dev/null
+        hg book -i >/dev/null
     )
+    # record whereami before re-run so we can assert the working copy did not move
+    before_rev="$(cd "$HG_CB_REENTER" && hg log -r . --template '{node}\n')"
     output="$(cd "$HG_CB_REENTER" && bash "$CREATE_BRANCH" "$PLAN_FILE_DATED" 2>&1 | tail -n 1)"
     assert_output "hg/reenter: outputs derived branch name" "$EXPECTED_DERIVED_BRANCH" "$output"
-    current_hg="$(cd "$HG_CB_REENTER" && hg branch)"
-    assert_output "hg/reenter: hg branch is set to derived name (via hg update)" "$EXPECTED_DERIVED_BRANCH" "$current_hg"
+    active="$(cd "$HG_CB_REENTER" && hg log -r . --template '{activebookmark}\n')"
+    assert_output "hg/reenter: derived bookmark is now active (via hg update)" "$EXPECTED_DERIVED_BRANCH" "$active"
+    after_rev="$(cd "$HG_CB_REENTER" && hg log -r . --template '{node}\n')"
+    assert_output "hg/reenter: working copy did not move" "$before_rev" "$after_rev"
 
-    # test 9: hg repo with no commits yet (fresh hg init) -> hg branch still sets branch
-    # for the next commit, output matches derived name
+    # test 9: hg repo with no commits yet -> hg book attaches to null parent, works fine
     echo ""
-    echo "test 9: hg repo no-commit state -> hg branch set, outputs derived name"
+    echo "test 9: hg repo no-commit state -> bookmark created on null parent"
     HG_CB_FRESH="$(mk_tmp)"
     make_hg_repo "$HG_CB_FRESH"
     output="$(cd "$HG_CB_FRESH" && bash "$CREATE_BRANCH" "$PLAN_FILE_DATED" 2>/dev/null | tail -n 1)"
     assert_output "hg/fresh: outputs derived branch name" "$EXPECTED_DERIVED_BRANCH" "$output"
-    current_hg="$(cd "$HG_CB_FRESH" && hg branch)"
-    assert_output "hg/fresh: hg branch set to derived name" "$EXPECTED_DERIVED_BRANCH" "$current_hg"
+    active="$(cd "$HG_CB_FRESH" && hg log -r . --template '{activebookmark}\n')"
+    assert_output "hg/fresh: derived bookmark is active" "$EXPECTED_DERIVED_BRANCH" "$active"
 fi
 
 echo ""
@@ -446,6 +486,19 @@ echo "test 15b: git repo with CODEX_MODEL override"
 stub_out="$(cd "$GIT_RC" && CODEX_MODEL=gpt-5.5 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
 assert_contains "git: CODEX_MODEL env var overrides model" "$stub_out" "model=gpt-5.5"
 assert_not_contains "git: default model not used when override set" "$stub_out" "model=gpt-5.4"
+
+# test 15c: CODEX_NO_OVERRIDES=1 suppresses all -c flags -- for proxies that reject them
+echo ""
+echo "test 15c: CODEX_NO_OVERRIDES=1 suppresses -c overrides"
+stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=1 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
+assert_not_contains "git: no -c model= when CODEX_NO_OVERRIDES" "$stub_out" "model=gpt-5.4"
+assert_not_contains "git: no -c model_reasoning_effort= when CODEX_NO_OVERRIDES" "$stub_out" "model_reasoning_effort"
+assert_not_contains "git: no -c stream_idle_timeout_ms= when CODEX_NO_OVERRIDES" "$stub_out" "stream_idle_timeout_ms"
+assert_not_contains "git: no project_doc when CODEX_NO_OVERRIDES" "$stub_out" "project_doc"
+# non -c args (exec / --sandbox / prompt) must still be there
+assert_contains "git: exec still present with CODEX_NO_OVERRIDES" "$stub_out" "exec"
+assert_contains "git: --sandbox still present with CODEX_NO_OVERRIDES" "$stub_out" "--sandbox"
+assert_contains "git: prompt still passed with CODEX_NO_OVERRIDES" "$stub_out" "hello prompt"
 
 if [ "$HG_AVAILABLE" -eq 1 ]; then
     # test 16: hg repo -> codex called WITH --skip-git-repo-check positioned

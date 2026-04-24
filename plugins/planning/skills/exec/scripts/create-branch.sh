@@ -77,9 +77,14 @@ do_git() {
 
 do_hg() {
     local plan_file="$1"
+    # current active bookmark — modern-Mercurial equivalent of "current branch".
+    # empty when no bookmark is active — matches do_git "on default branch" case.
+    # uses bookmarks (not named branches): Mercurial 6.x deprecates named
+    # branches in favour of bookmarks, and some Mercurial-compatible
+    # implementations have removed the named-branch subcommand entirely
     local current
-    current=$(hg branch)
-    if [ "$current" != "default" ]; then
+    current=$(hg log -r . --template '{activebookmark}\n')
+    if [ -n "$current" ]; then
         echo "$current"
         return 0
     fi
@@ -87,12 +92,12 @@ do_hg() {
     local branch_name
     branch_name=$(derive_branch_name "$plan_file")
 
-    # partial-run recovery: if branch already committed, hg update; else hg branch.
-    # fresh-branch (working-copy only) is not listed — 'hg branch' re-marks it safely.
-    if hg branches -q | grep -qxF "$branch_name"; then
+    # partial-run recovery: switch to existing bookmark, else create one on current commit.
+    # hg book --template lists local bookmark names — fast, no network, works on both dialects.
+    if hg book --template '{bookmark}\n' 2>/dev/null | grep -qxF "$branch_name"; then
         hg update "$branch_name" >/dev/null
     else
-        hg branch "$branch_name" >/dev/null
+        hg book "$branch_name" >/dev/null
     fi
 
     echo "$branch_name"
