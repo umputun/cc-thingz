@@ -263,6 +263,13 @@ Configuration via `userConfig` (prompted at plugin install):
 | `finalize_enabled` | `true` | Whether to run the finalize phase (rebase + squash) |
 | `plans_dir` | `docs/plans` | Directory where plan files are located |
 
+Environment variables read by `run-codex.sh`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CODEX_MODEL` | `gpt-5.4` | Model name passed to `codex exec` via `-c model=...` |
+| `CODEX_NO_OVERRIDES` | *(unset)* | When set to the literal value `1`, suppresses all `-c` overrides (`model`, `model_reasoning_effort`, `stream_idle_timeout_ms`, `project_doc`). Useful for codex proxies / wrappers that reject `-c model/provider` overrides. Any other value (including `0`, `false`, empty) leaves the overrides on. |
+
 ### release-tools
 
 Release workflow tools for creating versioned releases with auto-generated notes.
