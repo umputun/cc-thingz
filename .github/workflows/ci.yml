@@ -48,14 +48,17 @@ jobs:
         run: |
           find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck
 
-      - name: Ban deprecated branch/branches subcommands in exec scripts
+      - name: Ban legacy branch/branches subcommands in exec scripts
         run: |
-          # The legacy branch/branches subcommands are deprecated in modern
-          # Mercurial (6.x) and removed entirely in some Mercurial-compatible
-          # implementations. The exec scripts must use the bookmark subcommand
-          # instead to stay portable across the modern-Mercurial ecosystem.
-          if grep -nE '\bhg[[:space:]]+branch(es)?\b' plugins/planning/skills/exec/scripts/*.sh; then
-              echo "ERROR: deprecated branch/branches subcommand found in exec scripts -- use bookmark patterns for modern-Mercurial compatibility" >&2
+          # Mercurial-compatible forks have dropped the legacy branch/branches
+          # subcommands in favour of bookmarks; upstream Mercurial still ships
+          # them but recommends bookmark-based workflows. The exec scripts must
+          # use bookmark primitives to stay portable across the ecosystem.
+          # Regex anchors on start-of-line with optional non-# prefix so
+          # explanatory comments (e.g. "# don't use hg branch here") do not
+          # trip the lint.
+          if grep -nE '^[^#]*\bhg[[:space:]]+branch(es)?\b' plugins/planning/skills/exec/scripts/*.sh; then
+              echo "ERROR: legacy branch/branches subcommand found in exec scripts -- use bookmark patterns for portability" >&2
               exit 1
           fi
 

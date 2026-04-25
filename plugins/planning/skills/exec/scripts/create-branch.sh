@@ -79,12 +79,28 @@ do_hg() {
     local plan_file="$1"
     # current active bookmark — modern-Mercurial equivalent of "current branch".
     # empty when no bookmark is active — matches do_git "on default branch" case.
-    # uses bookmarks (not named branches): Mercurial 6.x deprecates named
-    # branches in favour of bookmarks, and some Mercurial-compatible
-    # implementations have removed the named-branch subcommand entirely
+    # uses bookmarks (not named branches) because Mercurial-compatible forks have
+    # dropped the named-branch subcommands in favour of bookmarks; upstream
+    # Mercurial still ships them but recommends bookmark-based workflows.
+    # bookmark primitives keep this script portable across the full ecosystem.
     local current
     current=$(hg log -r . --template '{activebookmark}\n')
-    if [ -n "$current" ]; then
+
+    # resolve the default branch so an active default bookmark (e.g. master / main
+    # when the default is exposed as remote/master) is not mistaken for a feature
+    # branch. detect-branch.sh returns `remote/<name>` in repos with remote-tracking
+    # refs; strip the prefix since local bookmarks use the bare name.
+    local default_branch
+    default_branch=$(bash "$SCRIPT_DIR/detect-branch.sh" 2>/dev/null || true)
+    default_branch=${default_branch#remote/}
+
+    # if an active bookmark exists and it is not the default, treat it as a
+    # feature branch and early-return. mirrors the do_git branch-check shape.
+    if [ -n "$current" ] && [ -n "$default_branch" ] && [ "$current" != "$default_branch" ]; then
+        echo "$current"
+        return 0
+    elif [ -n "$current" ] && [ -z "$default_branch" ] && [ "$current" != "main" ] && [ "$current" != "master" ]; then
+        # no default detected — fall back to the main/master heuristic
         echo "$current"
         return 0
     fi

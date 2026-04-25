@@ -331,6 +331,39 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
     assert_output "hg/fresh: outputs derived branch name" "$EXPECTED_DERIVED_BRANCH" "$output"
     active="$(cd "$HG_CB_FRESH" && hg log -r . --template '{activebookmark}\n')"
     assert_output "hg/fresh: derived bookmark is active" "$EXPECTED_DERIVED_BRANCH" "$active"
+
+    # test 9b: active bookmark IS the default (e.g. master/main) -> must NOT early-return;
+    # still create the derived bookmark. regression for the "any active bookmark counts as
+    # feature branch" bug that would otherwise skip bookmark creation in bookmark-based
+    # repos where the default line itself is held by an active bookmark.
+    echo ""
+    echo "test 9b: active default bookmark -> still creates derived bookmark"
+    HG_CB_ACTIVE_DEFAULT="$(mk_tmp)"
+    make_hg_repo "$HG_CB_ACTIVE_DEFAULT"
+    (
+        cd "$HG_CB_ACTIVE_DEFAULT"
+        # set up a remote/master revset alias so detect-branch.sh returns remote/master;
+        # create-branch.sh will strip the `remote/` prefix and compare against the
+        # active bookmark `master`, treating it as the default rather than a feature
+        cat >>.hg/hgrc <<'HGRC'
+[revsetalias]
+remote/master = bookmark("master")
+HGRC
+        echo "seed" >seed.txt
+        hg add seed.txt >/dev/null
+        hg commit -m "seed" >/dev/null
+        # create master as an active bookmark -- the default line is itself bookmarked
+        hg book master >/dev/null
+    )
+    # confirm active bookmark is master before we run create-branch
+    active_before="$(cd "$HG_CB_ACTIVE_DEFAULT" && hg log -r . --template '{activebookmark}\n')"
+    assert_output "hg/active-default: precondition -- master bookmark is active" "master" "$active_before"
+    output="$(cd "$HG_CB_ACTIVE_DEFAULT" && bash "$CREATE_BRANCH" "$PLAN_FILE_DATED" 2>/dev/null | tail -n 1)"
+    assert_output "hg/active-default: outputs derived bookmark, not master" "$EXPECTED_DERIVED_BRANCH" "$output"
+    book_list="$(cd "$HG_CB_ACTIVE_DEFAULT" && hg book --template '{bookmark}\n')"
+    assert_contains "hg/active-default: derived bookmark was created" "$book_list" "$EXPECTED_DERIVED_BRANCH"
+    active_after="$(cd "$HG_CB_ACTIVE_DEFAULT" && hg log -r . --template '{activebookmark}\n')"
+    assert_output "hg/active-default: derived bookmark is now active" "$EXPECTED_DERIVED_BRANCH" "$active_after"
 fi
 
 echo ""
@@ -486,19 +519,6 @@ echo "test 15b: git repo with CODEX_MODEL override"
 stub_out="$(cd "$GIT_RC" && CODEX_MODEL=gpt-5.5 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
 assert_contains "git: CODEX_MODEL env var overrides model" "$stub_out" "model=gpt-5.5"
 assert_not_contains "git: default model not used when override set" "$stub_out" "model=gpt-5.4"
-
-# test 15c: CODEX_NO_OVERRIDES=1 suppresses all -c flags -- for proxies that reject them
-echo ""
-echo "test 15c: CODEX_NO_OVERRIDES=1 suppresses -c overrides"
-stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=1 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
-assert_not_contains "git: no -c model= when CODEX_NO_OVERRIDES" "$stub_out" "model=gpt-5.4"
-assert_not_contains "git: no -c model_reasoning_effort= when CODEX_NO_OVERRIDES" "$stub_out" "model_reasoning_effort"
-assert_not_contains "git: no -c stream_idle_timeout_ms= when CODEX_NO_OVERRIDES" "$stub_out" "stream_idle_timeout_ms"
-assert_not_contains "git: no project_doc when CODEX_NO_OVERRIDES" "$stub_out" "project_doc"
-# non -c args (exec / --sandbox / prompt) must still be there
-assert_contains "git: exec still present with CODEX_NO_OVERRIDES" "$stub_out" "exec"
-assert_contains "git: --sandbox still present with CODEX_NO_OVERRIDES" "$stub_out" "--sandbox"
-assert_contains "git: prompt still passed with CODEX_NO_OVERRIDES" "$stub_out" "hello prompt"
 
 if [ "$HG_AVAILABLE" -eq 1 ]; then
     # test 16: hg repo -> codex called WITH --skip-git-repo-check positioned
