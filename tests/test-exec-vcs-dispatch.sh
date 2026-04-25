@@ -520,6 +520,37 @@ stub_out="$(cd "$GIT_RC" && CODEX_MODEL=gpt-5.5 PATH="$STUB_DIR:$PATH" bash "$RU
 assert_contains "git: CODEX_MODEL env var overrides model" "$stub_out" "model=gpt-5.5"
 assert_not_contains "git: default model not used when override set" "$stub_out" "model=gpt-5.4"
 
+# test 15c: CODEX_NO_OVERRIDES=1 suppresses all -c flags -- for proxies that reject them
+echo ""
+echo "test 15c: CODEX_NO_OVERRIDES=1 suppresses -c overrides"
+stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=1 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
+assert_not_contains "git: no -c model= when CODEX_NO_OVERRIDES=1" "$stub_out" "model=gpt-5.4"
+assert_not_contains "git: no -c model_reasoning_effort= when CODEX_NO_OVERRIDES=1" "$stub_out" "model_reasoning_effort"
+assert_not_contains "git: no -c stream_idle_timeout_ms= when CODEX_NO_OVERRIDES=1" "$stub_out" "stream_idle_timeout_ms"
+assert_not_contains "git: no project_doc when CODEX_NO_OVERRIDES=1" "$stub_out" "project_doc"
+# non -c args (exec / --sandbox / prompt) must still be there
+assert_contains "git: exec still present with CODEX_NO_OVERRIDES=1" "$stub_out" "exec"
+assert_contains "git: --sandbox still present with CODEX_NO_OVERRIDES=1" "$stub_out" "--sandbox"
+assert_contains "git: prompt still passed with CODEX_NO_OVERRIDES=1" "$stub_out" "hello prompt"
+
+# test 15d: only the literal "1" activates suppression -- other values must NOT silently turn it on.
+# guards against the "set to 1 to enable" semantic surprise where someone tries =0 to disable
+# and accidentally enables it.
+echo ""
+echo "test 15d: CODEX_NO_OVERRIDES=0 does NOT activate suppression"
+stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=0 PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
+assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=0" "$stub_out" "model=gpt-5.4"
+
+echo ""
+echo "test 15e: CODEX_NO_OVERRIDES=false does NOT activate suppression"
+stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=false PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
+assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=false" "$stub_out" "model=gpt-5.4"
+
+echo ""
+echo "test 15f: CODEX_NO_OVERRIDES=no does NOT activate suppression"
+stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=no PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "hello prompt")"
+assert_contains "git: -c model= present when CODEX_NO_OVERRIDES=no" "$stub_out" "model=gpt-5.4"
+
 if [ "$HG_AVAILABLE" -eq 1 ]; then
     # test 16: hg repo -> codex called WITH --skip-git-repo-check positioned
     # right after 'exec' (before --sandbox)
