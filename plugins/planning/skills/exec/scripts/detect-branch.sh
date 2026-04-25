@@ -38,6 +38,20 @@ do_git() {
 }
 
 do_hg() {
+    # probe common default-branch remote-tracking refs first — modern Mercurial
+    # workflows expose the upstream default as `remote/<name>` and jj uses the
+    # same convention. present(remote/<name>) returns empty instead of aborting
+    # when the revset is absent, so the loop is safe on repos that do not
+    # expose remote-tracking refs this way
+    local candidate
+    for candidate in master main trunk; do
+        if hg log -r "present(remote/$candidate)" --template '{node}\n' 2>/dev/null | grep -q .; then
+            echo "remote/$candidate"
+            return 0
+        fi
+    done
+
+    # vanilla-hg fallback: the traditional named branch
     echo "default"
 }
 

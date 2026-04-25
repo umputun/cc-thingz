@@ -47,7 +47,7 @@ Read the plan file. Count total Task sections (`### Task N:` or `### Iteration N
 
 Determine the default branch: `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-branch.sh`
 
-Note: in `hg` repos, the external-review prompt (`prompts/codex-review.md`) and the finalize prompt (`prompts/finalizer.md`) use git-specific commands and are not VCS-translated upstream. Both phases will be skipped (see step 9 and step 11, which re-detect VCS locally). Users who want hg-native review/finalize can override via `.claude/exec-plan/prompts/codex-review.md` and `.claude/exec-plan/prompts/finalizer.md` — note that `DEFAULT_BRANCH` substitutes as `default` (hg's default-branch name), so any `git rebase origin/DEFAULT_BRANCH` in the bundled template must be replaced with the hg equivalent (e.g. `hg rebase -d default`) in the override.
+Note: in `hg` repos, detect-branch.sh returns `remote/<name>` (checking `master`, `main`, `trunk` in that order) in modern-Mercurial repos that expose upstream default via `remote/<name>` refs, and falls back to `default` in repos that use the traditional named-branch convention instead. The external-review prompt (`prompts/codex-review.md`) and the finalize prompt (`prompts/finalizer.md`) use git-specific commands and are not VCS-translated upstream. Both phases will be skipped (see step 9 and step 11, which re-detect VCS locally). Users who want hg-native review/finalize can override via `.claude/exec-plan/prompts/codex-review.md` and `.claude/exec-plan/prompts/finalizer.md` — any `git rebase origin/DEFAULT_BRANCH` in the bundled template must be replaced with the hg equivalent in the override, e.g. `hg rebase -d remote/master` when the repo exposes remote-tracking refs, or `hg rebase -d default` when it uses the traditional named-branch convention.
 
 ### Step 2. Ask about worktree isolation
 
@@ -182,7 +182,7 @@ Determine the external review command:
 
 Loop up to `external_review_iterations` times (userConfig, default: 10):
 
-1. **Resolve the codex prompt** — read `prompts/codex-review.md` through the override chain. Replace `DIFF_COMMAND` (iteration 1: `git diff DEFAULT_BRANCH...HEAD`, subsequent: `git diff`) and `PROGRESS_FILE_PATH`. The progress file contains all previous review findings and fixer responses — codex reads it to avoid re-reporting fixed issues.
+1. **Resolve the codex prompt** — read `prompts/codex-review.md` through the override chain. Replace `DIFF_COMMAND` using `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`: for `git`, iteration 1 is `git diff DEFAULT_BRANCH...HEAD` and subsequent iterations are `git diff`; for `hg`, iteration 1 is `hg diff -r 'ancestor(., DEFAULT_BRANCH)'` and subsequent iterations are `hg diff`. Also replace `PROGRESS_FILE_PATH`. The progress file contains all previous review findings and fixer responses — codex reads it to avoid re-reporting fixed issues.
 
 2. **Run codex** — `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/run-codex.sh "<resolved prompt>"` with `run_in_background: true`. You will be notified when done — do NOT poll or sleep.
 
@@ -204,7 +204,7 @@ Same structure as step 7 but with `REVIEW_PHASE` set to `critical`. Resolve `pro
 
 ### Step 11. Finalize
 
-**hg skip**: Detect VCS with `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`. If `vcs` is `hg`, skip this entire step. Report to user: "hg detected — skipping finalize (git-only). Override `prompts/finalizer.md` via `.claude/exec-plan/` to enable hg-native finalize." Note that `DEFAULT_BRANCH` substitutes as `default` (hg's default-branch name) when users override `prompts/finalizer.md` for hg, so any `git rebase origin/DEFAULT_BRANCH` in the bundled template must be replaced with the hg equivalent (e.g. `hg rebase -d default`) in the override. Proceed directly to step 12.
+**hg skip**: Detect VCS with `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`. If `vcs` is `hg`, skip this entire step. Report to user: "hg detected — skipping finalize (git-only). Override `prompts/finalizer.md` via `.claude/exec-plan/` to enable hg-native finalize." Note that `DEFAULT_BRANCH` substitutes as whatever detect-branch.sh returned — `remote/master` (or `remote/main`/`remote/trunk`) in modern-Mercurial repos that expose remote-tracking refs, `default` in repos that use the traditional named-branch convention — so any `git rebase origin/DEFAULT_BRANCH` in the bundled template must be replaced with the hg equivalent (e.g. `hg rebase -d remote/master`, or `hg rebase -d default` in the named-branch case) in the override. Proceed directly to step 12.
 
 Check `finalize_enabled` userConfig (default: true). If false, skip this step.
 

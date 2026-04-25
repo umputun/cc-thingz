@@ -48,6 +48,20 @@ jobs:
         run: |
           find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck
 
+      - name: Ban legacy branch/branches subcommands in exec scripts
+        run: |
+          # Mercurial-compatible forks have dropped the legacy branch/branches
+          # subcommands in favour of bookmarks; upstream Mercurial still ships
+          # them but recommends bookmark-based workflows. The exec scripts must
+          # use bookmark primitives to stay portable across the ecosystem.
+          # Regex anchors on start-of-line with optional non-# prefix so
+          # explanatory comments (e.g. "# don't use hg branch here") do not
+          # trip the lint.
+          if grep -nE '^[^#]*\bhg[[:space:]]+branch(es)?\b' plugins/planning/skills/exec/scripts/*.sh; then
+              echo "ERROR: legacy branch/branches subcommand found in exec scripts -- use bookmark patterns for portability" >&2
+              exit 1
+          fi
+
       - name: Install mercurial
         run: |
           sudo apt-get install -y -qq --no-install-recommends mercurial || \
