@@ -90,7 +90,7 @@ After design is validated, use AskUserQuestion tool:
     "question": "Design looks complete. What's next?",
     "header": "Next step",
     "options": [
-      {"label": "Write plan", "description": "Create docs/plans/YYYY-MM-DD-<topic>.md with implementation steps via /planning:make"},
+      {"label": "Write plan", "description": "Create docs/plans/yyyymmdd-<task-name>.md with implementation steps via /planning:make"},
       {"label": "Plan mode", "description": "Enter plan mode for structured implementation planning"},
       {"label": "Start now", "description": "Begin implementing directly"}
     ],
