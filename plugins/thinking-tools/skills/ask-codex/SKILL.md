@@ -155,7 +155,7 @@ Use "approve" only if you cannot support any substantive finding.
 Run codex in background (it takes 2-5 minutes for complex analysis):
 
 ```bash
-codex exec -m gpt-5.4 \
+codex exec -m gpt-5.5 \
   --sandbox read-only \
   -c model_reasoning_effort="high" \
   -c stream_idle_timeout_ms=600000 \
@@ -172,7 +172,7 @@ codex exec -m gpt-5.4 \
 
 **Flags:**
 - `--sandbox read-only` — codex can read all project files but cannot modify anything
-- `-m gpt-5.4` — latest model (adjust as newer versions become available)
+- `-m gpt-5.5` — latest model (adjust as newer versions become available)
 - `model_reasoning_effort="high"` — maximum reasoning depth
 - `project_doc` — passes CLAUDE.md as project context (both global and local if present)
 
