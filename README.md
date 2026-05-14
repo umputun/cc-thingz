@@ -325,13 +325,13 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
-| skill | `/workflow:learn` | Capture strategic project knowledge to project CLAUDE.md |
+| skill | `/workflow:learn` | Capture strategic project knowledge to project CLAUDE.md (routes to CLAUDE.local.md when that file is present) |
 | skill | `/workflow:clarify` | Investigate and explain user confusion, determine if real issue exists |
 | skill | `/workflow:wrong` | Reset and re-evaluate when current approach isn't working |
 | skill | `/workflow:md-copy` | Format final answer as markdown and copy to clipboard |
 | skill | `/workflow:txt-copy` | Copy generated text content to clipboard |
 
-**learn** — reviews conversation history, extracts strategic project knowledge (architecture patterns, conventions, operational insights), and saves selected items to project CLAUDE.md. Uses granular selection via AskUserQuestion so the user picks exactly what to keep.
+**learn** — reviews conversation history, extracts strategic project knowledge (architecture patterns, conventions, operational insights), and saves selected items to the project CLAUDE.md. When `CLAUDE.local.md` is present, per-developer / per-checkout discoveries (machine-specific tooling, environment quirks) are routed there instead. Defers to any project-defined memory-placement guidance documented in `CLAUDE.md` or `.claude/rules/`. Uses granular selection via AskUserQuestion so the user picks exactly what to keep.
 
 **clarify** — activates on confusion signals ("I don't understand", "why is this happening", etc.). Investigates the actual codebase to determine whether the confusion stems from a misunderstanding or a real issue. If real, proceeds to plan mode for a fix.
 
