@@ -1,12 +1,12 @@
 ---
 name: learn
-description: Update local CLAUDE.md with strategic knowledge discovered during this session. Use when user says "learn", "save knowledge", "update claude.md", "capture learnings", or at end of significant work sessions. Also used by commit skill for pre-commit knowledge capture.
+description: Update project CLAUDE.md with strategic knowledge discovered during this session. Use when user says "learn", "save knowledge", "update claude.md", "capture learnings", or at end of significant work sessions. Also used by commit skill for pre-commit knowledge capture.
 allowed-tools: Read, Edit, AskUserQuestion
 ---
 
 # Learn
 
-Review the current conversation history and identify strategic, reusable project knowledge that should be captured in the local CLAUDE.md file.
+Review the current conversation history and identify strategic, reusable project knowledge that should be captured in the project CLAUDE.md file.
 
 ## Analysis Process
 
@@ -31,7 +31,7 @@ Review the current conversation history and identify strategic, reusable project
    - Build and deployment processes
    - Operational knowledge (debugging, DevOps)
 
-## What Qualifies for Local CLAUDE.md
+## What Qualifies for Project CLAUDE.md
 
 **INCLUDE** - Strategic discoveries from this session:
 - Architectural patterns uncovered while working
@@ -70,8 +70,8 @@ Ask yourself for each discovery:
 
 ## Workflow
 
-### 1. Check Existing Local CLAUDE.md
-First, check if local CLAUDE.md exists and read its current content to avoid duplication.
+### 1. Check Existing Project CLAUDE.md
+First, check if project CLAUDE.md exists and read its current content to avoid duplication.
 
 ### 2. Early Exit if Nothing Found
 If no new strategic knowledge was discovered during this session:
@@ -80,7 +80,7 @@ If no new strategic knowledge was discovered during this session:
 - End the skill execution
 
 ### 3. New Knowledge to Add
-Present discovered knowledge formatted for local CLAUDE.md:
+Present discovered knowledge formatted for project CLAUDE.md:
 ```markdown
 ## [Section Name]
 - Discovery 1
@@ -99,7 +99,7 @@ Build options dynamically based on discoveries:
 
 Example with 3 discoveries:
 ```
-question: "Which knowledge should I save to local CLAUDE.md?"
+question: "Which knowledge should I save to project CLAUDE.md?"
 options:
   - label: "All (3 items)"
     description: "Save all discovered patterns"
@@ -113,7 +113,7 @@ options:
 
 Example with 1 discovery:
 ```
-question: "Save this knowledge to local CLAUDE.md?"
+question: "Save this knowledge to project CLAUDE.md?"
 options:
   - label: "Yes"
     description: "Save: [brief description of the discovery]"
@@ -129,7 +129,7 @@ After user selection:
 
 ## Important Guidelines
 - Only capture genuinely new discoveries from this session
-- Don't duplicate existing local or global CLAUDE.md content
+- Don't duplicate existing project or user CLAUDE.md content
 - Focus on patterns observed, not specific code written
 - Keep descriptions concise and actionable
 - MUST use AskUserQuestion tool for confirmation (not plain text questions)
