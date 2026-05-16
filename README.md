@@ -325,7 +325,7 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
-| skill | `/workflow:learn` | Capture strategic project knowledge to project CLAUDE.md (routes to CLAUDE.local.md when that file is present) |
+| skill | `/workflow:learn` | Capture strategic project knowledge to project CLAUDE.md (routes per-developer / per-checkout discoveries to CLAUDE.local.md when that file is present) |
 | skill | `/workflow:clarify` | Investigate and explain user confusion, determine if real issue exists |
 | skill | `/workflow:wrong` | Reset and re-evaluate when current approach isn't working |
 | skill | `/workflow:md-copy` | Format final answer as markdown and copy to clipboard |

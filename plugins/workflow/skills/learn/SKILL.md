@@ -89,7 +89,7 @@ Ask yourself for each discovery:
 Before applying the routing rules below, scan the project's root `CLAUDE.md`, any `.claude/rules/*.md` files, and the user's global `~/.claude/CLAUDE.md` for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `CLAUDE.md` / `CLAUDE.local.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
 
 ### 2. Check Existing Memory Content
-Read the current content of project `CLAUDE.md` (and `CLAUDE.local.md` if present) to avoid duplication.
+Read the current content of project `CLAUDE.md`, `CLAUDE.local.md` (if present), and the user's global `~/.claude/CLAUDE.md` to avoid duplication — including cross-project entries already captured in user memory.
 
 ### 3. Early Exit if Nothing Found
 If no new strategic knowledge was discovered during this session:
@@ -119,7 +119,7 @@ Build options dynamically based on discoveries:
 - User can always type custom selection via "Other"
 
 Example with 3 discoveries (2 project, 1 personal):
-```
+```yaml
 question: "Which knowledge should I save?"
 options:
   - label: "All (3 items)"
@@ -133,7 +133,7 @@ options:
 ```
 
 Example with 1 discovery:
-```
+```yaml
 question: "Save this knowledge?"
 options:
   - label: "Yes → project CLAUDE.md"
