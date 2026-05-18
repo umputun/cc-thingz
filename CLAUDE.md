@@ -19,6 +19,7 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
 - Hook scripts use `${CLAUDE_PLUGIN_ROOT}` for path resolution when running as a plugin. The plugin system copies files to a cache location during install, so absolute/relative paths won't work.
 - Manual install instructions are kept in README.md as a fallback for users who prefer direct setup.
 - **Versioning** — each plugin has its own `version` in `plugins/<name>/.claude-plugin/plugin.json`. Bump independently per plugin. Use semver: patch for bug fixes, minor for new components, major for breaking changes. **Bump triggers on any change to bundled plugin content** — prompts, agents, references (e.g., `usage.md`), scripts, commands, hooks — not just `.claude-plugin/` files. Anything shipped to consumers via the plugin is a release artifact.
+- **Changelog**: when bumping a plugin version, update `CHANGELOG.md` in the same change. Version headings use the plugin name and plugin version (e.g., `## planning v3.7.1 - YYYY-MM-DD`), not tags. Keep entries grouped like the changelog style: New Features, Improvements, Bug Fixes, Other.
 - **Cross-references** — when skills reference other skills within the same plugin, use the plugin name prefix (e.g., `/review:writing-style`). When referencing skills in other plugins, use that plugin's name (e.g., `/planning:make`).
 
 ## Structure
