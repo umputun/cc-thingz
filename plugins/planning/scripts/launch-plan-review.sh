@@ -40,10 +40,14 @@ PLAN_ABS=$(cd "$(dirname "$PLAN_FILE")" && echo "$(pwd)/$(basename "$PLAN_FILE")
 REVDIFF_CMD="$(sq "$REVDIFF_BIN") $(sq "--only=$PLAN_ABS") $(sq "--output=$OUTPUT_FILE") $(sq --wrap)"
 OVERLAY_TITLE="plan: $(basename "$PLAN_FILE")"
 
+# popup size: override via REVDIFF_POPUP_WIDTH / REVDIFF_POPUP_HEIGHT env vars (tmux, zellij, and wezterm)
+POPUP_W="${REVDIFF_POPUP_WIDTH:-90%}"
+POPUP_H="${REVDIFF_POPUP_HEIGHT:-90%}"
+
 # tmux: display-popup -E blocks until command exits
 if [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
     # -T (title) requires tmux 3.3+; skip on older versions
-    TMUX_ARGS=(tmux display-popup -E -w 90% -h 90%)
+    TMUX_ARGS=(tmux display-popup -E -w "$POPUP_W" -h "$POPUP_H")
     if [[ "$(tmux -V 2>/dev/null)" =~ ([0-9]+)\.([0-9]+) ]]; then
         if [ "${BASH_REMATCH[1]}" -gt 3 ] || { [ "${BASH_REMATCH[1]}" -eq 3 ] && [ "${BASH_REMATCH[2]}" -ge 3 ]; }; then
             TMUX_ARGS+=(-T " $OVERLAY_TITLE ")
@@ -69,7 +73,7 @@ LAUNCHER
     chmod +x "$LAUNCH_SCRIPT"
 
     zellij run --floating --close-on-exit \
-        --width 90 --height 90 \
+        --width "$POPUP_W" --height "$POPUP_H" \
         --name "$OVERLAY_TITLE" \
         -- "$LAUNCH_SCRIPT" >/dev/null 2>&1
 
@@ -116,7 +120,9 @@ if [ -n "${WEZTERM_PANE:-}" ]; then
         SENTINEL=$(mktemp "$TMPBASE/plan-review-done-XXXXXX")
         rm -f "$SENTINEL"
 
-        "${WEZTERM_CLI[@]}" split-pane --bottom --percent 90 \
+        WEZTERM_PCT="${REVDIFF_POPUP_HEIGHT:-90%}"
+        WEZTERM_PCT="${WEZTERM_PCT%%%}"
+        "${WEZTERM_CLI[@]}" split-pane --bottom --percent "$WEZTERM_PCT" \
             --pane-id "$WEZTERM_PANE" -- sh -c "$REVDIFF_CMD; touch $(sq "$SENTINEL")" >/dev/null 2>&1
 
         while [ ! -f "$SENTINEL" ]; do
