@@ -40,7 +40,8 @@ PLAN_ABS=$(cd "$(dirname "$PLAN_FILE")" && echo "$(pwd)/$(basename "$PLAN_FILE")
 REVDIFF_CMD="$(sq "$REVDIFF_BIN") $(sq "--only=$PLAN_ABS") $(sq "--output=$OUTPUT_FILE") $(sq --wrap)"
 OVERLAY_TITLE="plan: $(basename "$PLAN_FILE")"
 
-# popup size: override via REVDIFF_POPUP_WIDTH / REVDIFF_POPUP_HEIGHT env vars (tmux, zellij, and wezterm)
+# popup size: override via REVDIFF_POPUP_WIDTH + REVDIFF_POPUP_HEIGHT env vars (for tmux and zellij)
+# for wezterm, use REVDIFF_POPUP_HEIGHT as the bottom split percent (default 90%)
 POPUP_W="${REVDIFF_POPUP_WIDTH:-90%}"
 POPUP_H="${REVDIFF_POPUP_HEIGHT:-90%}"
 
@@ -120,8 +121,7 @@ if [ -n "${WEZTERM_PANE:-}" ]; then
         SENTINEL=$(mktemp "$TMPBASE/plan-review-done-XXXXXX")
         rm -f "$SENTINEL"
 
-        WEZTERM_PCT="${REVDIFF_POPUP_HEIGHT:-90%}"
-        WEZTERM_PCT="${WEZTERM_PCT%%%}"
+        WEZTERM_PCT="${POPUP_H%%%}"
         "${WEZTERM_CLI[@]}" split-pane --bottom --percent "$WEZTERM_PCT" \
             --pane-id "$WEZTERM_PANE" -- sh -c "$REVDIFF_CMD; touch $(sq "$SENTINEL")" >/dev/null 2>&1
 
