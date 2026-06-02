@@ -217,6 +217,13 @@ listen_on unix:/tmp/kitty-$KITTY_PID
 
 *Note*: when `revdiff` is installed, the `ExitPlanMode` hook and `/planning:make` interactive review both route through `launch-plan-review.sh` instead, which supports a wider set of overlays: tmux, zellij, kitty, wezterm/kaku, cmux, ghostty, iTerm2, and emacs vterm. The 3-terminal list above applies only to the `$EDITOR` fallback when revdiff is not installed.
 
+The overlay popup size is configurable via env vars:
+
+| Env var | Description | Default |
+|---------|-------------|---------|
+| `REVDIFF_POPUP_WIDTH` | Tmux/Zellij popup width (e.g., `100%`, `80%`) | `90%` |
+| `REVDIFF_POPUP_HEIGHT` | Tmux/Zellij popup height / wezterm split percent | `90%` |
+
 Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
 
 **plan-review agent** — automated plan quality reviewer. Analyzes plans for problem definition, solution correctness, scope creep, over-engineering, testing requirements, task granularity, and convention adherence. Used by the plan command's "Auto review" option. Outputs a structured report with severity-rated findings and an APPROVE/NEEDS REVISION verdict.
