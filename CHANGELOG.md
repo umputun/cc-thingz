@@ -4,6 +4,16 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.7.4 - 2026-06-02
+
+### Improvements
+
+- make the plan-review overlay popup size configurable via `REVDIFF_POPUP_WIDTH` / `REVDIFF_POPUP_HEIGHT` env vars, defaulting to 90% #27 @aldobrynin
+
+### Bug Fixes
+
+- pass `90%` (not 90 cells) to zellij for the plan-review overlay #27 @aldobrynin
+
 ## planning v3.7.3 - 2026-06-01
 
 ### Bug Fixes
