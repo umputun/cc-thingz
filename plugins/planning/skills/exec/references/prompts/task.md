@@ -7,6 +7,8 @@ Read the plan file at PLAN_FILE_PATH. Find the FIRST Task section (### Task N: o
 
 If a Task section has [ ] checkboxes you cannot complete (manual testing, deployment verification, external checks): mark them [x] with a note like "[x] manual test (skipped - not automatable)" and proceed.
 
+NEVER move, rename, or delete the plan file (PLAN_FILE_PATH) itself, even when a checkbox says to move it to a "completed/" directory. The harness moves the plan after all phases finish. If you encounter such a checkbox, mark it [x] and proceed without moving anything — moving it mid-run breaks every later review, finalize, and stats phase that reads PLAN_FILE_PATH.
+
 CRITICAL CONSTRAINT: Complete ONE Task section per iteration.
 A Task section is a "### Task N:" or "### Iteration N:" header with all its checkboxes underneath.
 Complete ALL checkboxes in that section, then STOP.

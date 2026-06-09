@@ -13,6 +13,7 @@ DETECT_BRANCH="$EXEC_SCRIPTS_DIR/detect-branch.sh"
 CREATE_BRANCH="$EXEC_SCRIPTS_DIR/create-branch.sh"
 STAGE_AND_COMMIT="$EXEC_SCRIPTS_DIR/stage-and-commit.sh"
 RUN_CODEX="$EXEC_SCRIPTS_DIR/run-codex.sh"
+MOVE_PLAN="$EXEC_SCRIPTS_DIR/move-plan.sh"
 
 passed=0
 failed=0
@@ -611,6 +612,98 @@ echo "test 20: run-codex.sh exits non-zero in empty dir"
 rc=0
 (cd "$EMPTY_DIR" && PATH="$STUB_DIR:$PATH" bash "$RUN_CODEX" "prompt" >/dev/null 2>&1) || rc=$?
 assert_exit_nonzero "run-codex.sh: empty dir exits non-zero" "$rc"
+
+echo ""
+echo "testing VCS dispatch: move-plan.sh"
+echo "=================================="
+
+PLAN_NAME="20260329-feature-name.md"
+EXPECTED_MOVE_SUBJECT="docs: move completed plan $PLAN_NAME to completed/"
+
+# test 21: git repo, finished plan -> moved into completed/ and committed as a rename
+echo ""
+echo "test 21: git repo, plan moved into completed/ + committed"
+GIT_MV="$(mk_tmp)"
+make_git_repo "$GIT_MV" main
+(
+    cd "$GIT_MV"
+    mkdir -p docs/plans
+    echo "# plan" >"docs/plans/$PLAN_NAME"
+    git add "docs/plans/$PLAN_NAME"
+    git commit -q -m "add plan"
+)
+commits_before="$(git -C "$GIT_MV" rev-list --count HEAD)"
+rc=0
+(cd "$GIT_MV" && bash "$MOVE_PLAN" "docs/plans/$PLAN_NAME" >/dev/null 2>&1) || rc=$?
+assert_output "git/move: exit code 0" "0" "$rc"
+[ ! -f "$GIT_MV/docs/plans/$PLAN_NAME" ] && orig="gone" || orig="present"
+assert_output "git/move: original path removed" "gone" "$orig"
+[ -f "$GIT_MV/docs/plans/completed/$PLAN_NAME" ] && dest="present" || dest="missing"
+assert_output "git/move: file now under completed/" "present" "$dest"
+subject="$(git -C "$GIT_MV" log -1 --pretty=%s)"
+assert_output "git/move: commit subject matches" "$EXPECTED_MOVE_SUBJECT" "$subject"
+commits_after="$(git -C "$GIT_MV" rev-list --count HEAD)"
+assert_output "git/move: exactly one new commit" "$((commits_before + 1))" "$commits_after"
+files="$(git -C "$GIT_MV" show --name-status --pretty=format: HEAD | sed '/^$/d')"
+assert_contains "git/move: commit records completed/ path" "$files" "docs/plans/completed/$PLAN_NAME"
+
+# test 22: git repo, re-run on the now-missing original path -> no-op exit 0, no new commit
+echo ""
+echo "test 22: git repo, re-run on already-moved plan -> no-op"
+rc=0
+out="$(cd "$GIT_MV" && bash "$MOVE_PLAN" "docs/plans/$PLAN_NAME" 2>&1)" || rc=$?
+assert_output "git/move-again: exit code 0 (no-op)" "0" "$rc"
+assert_contains "git/move-again: reports missing file" "$out" "plan file not found"
+commits_after2="$(git -C "$GIT_MV" rev-list --count HEAD)"
+assert_output "git/move-again: no additional commit" "$((commits_before + 1))" "$commits_after2"
+
+# test 23: path already under completed/ -> no-op, file untouched, no commit
+echo ""
+echo "test 23: git repo, path already under completed/ -> no-op"
+GIT_MV_DONE="$(mk_tmp)"
+make_git_repo "$GIT_MV_DONE" main
+(
+    cd "$GIT_MV_DONE"
+    mkdir -p docs/plans/completed
+    echo "# plan" >"docs/plans/completed/$PLAN_NAME"
+    git add "docs/plans/completed/$PLAN_NAME"
+    git commit -q -m "add completed plan"
+)
+commits_before="$(git -C "$GIT_MV_DONE" rev-list --count HEAD)"
+rc=0
+out="$(cd "$GIT_MV_DONE" && bash "$MOVE_PLAN" "docs/plans/completed/$PLAN_NAME" 2>&1)" || rc=$?
+assert_output "git/already-completed: exit code 0" "0" "$rc"
+assert_contains "git/already-completed: reports already under completed/" "$out" "already under completed/"
+[ -f "$GIT_MV_DONE/docs/plans/completed/$PLAN_NAME" ] && still="present" || still="missing"
+assert_output "git/already-completed: file untouched" "present" "$still"
+commits_after="$(git -C "$GIT_MV_DONE" rev-list --count HEAD)"
+assert_output "git/already-completed: no new commit" "$commits_before" "$commits_after"
+
+if [ "$HG_AVAILABLE" -eq 1 ]; then
+    # test 24: hg repo, finished plan -> moved into completed/ and committed
+    echo ""
+    echo "test 24: hg repo, plan moved into completed/ + committed"
+    HG_MV="$(mk_tmp)"
+    make_hg_repo "$HG_MV"
+    (
+        cd "$HG_MV"
+        mkdir -p docs/plans
+        echo "# plan" >"docs/plans/$PLAN_NAME"
+        hg add "docs/plans/$PLAN_NAME" >/dev/null
+        hg commit -m "add plan" >/dev/null
+    )
+    rc=0
+    (cd "$HG_MV" && bash "$MOVE_PLAN" "docs/plans/$PLAN_NAME" >/dev/null 2>&1) || rc=$?
+    assert_output "hg/move: exit code 0" "0" "$rc"
+    [ ! -f "$HG_MV/docs/plans/$PLAN_NAME" ] && orig="gone" || orig="present"
+    assert_output "hg/move: original path removed" "gone" "$orig"
+    [ -f "$HG_MV/docs/plans/completed/$PLAN_NAME" ] && dest="present" || dest="missing"
+    assert_output "hg/move: file now under completed/" "present" "$dest"
+    subject="$(cd "$HG_MV" && hg log -l 1 -T '{desc}')"
+    assert_output "hg/move: commit subject matches" "$EXPECTED_MOVE_SUBJECT" "$subject"
+    files="$(cd "$HG_MV" && hg log -l 1 -T '{files}')"
+    assert_contains "hg/move: commit records completed/ path" "$files" "docs/plans/completed/$PLAN_NAME"
+fi
 
 # summary
 echo ""
