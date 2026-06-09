@@ -4,6 +4,13 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.7.5 - 2026-06-09
+
+### Bug Fixes
+
+- exec: move the finished plan into `docs/plans/completed/` at completion. The plan's final "move to completed/" checkbox was marked `[x]` by a task subagent but the file never moved (the orchestrator explicitly refused, and a mid-run move would break every later phase's `PLAN_FILE_PATH`). Step 13 now performs the move via a VCS-aware `move-plan.sh` (git/hg), committing without pushing, so finished plans leave `docs/plans/` and stop re-appearing as `/planning:exec` candidates.
+- exec: forbid task subagents from moving/renaming the plan file. A subagent could interpret the "move to completed/" checkbox as an automatable `git mv` and abort the run when the orchestrator's `PLAN_FILE_PATH` re-read failed; the task prompt now marks such a checkbox `[x]` and leaves the move to the harness.
+
 ## planning v3.7.4 - 2026-06-02
 
 ### Improvements

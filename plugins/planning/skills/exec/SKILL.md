@@ -270,8 +270,8 @@ This step is best-effort — if the stats agent fails or the session log path ca
 
 When stats summary is done (or skipped on failure):
 - Log completion to progress file: `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh <progress-file> "completed"`
-- Report final line: "All N tasks completed, reviews passed, branch finalized"
-- Do NOT move the plan file or push — just report completion
+- Move the finished plan into its `completed/` subdirectory and commit it (best-effort): `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/move-plan.sh <plan-file-path>`. The script is a no-op when the plan is already under `completed/` or missing, derives the target as a `completed/` sibling of the plan's directory (so it respects a custom `plans_dir` and worktrees), and commits the move VCS-aware (git/hg). Do NOT push. If the script exits non-zero, report the failure but do not block completion.
+- Report final line: "All N tasks completed, reviews passed, branch finalized, plan moved to completed/"
 
 ## Key rules
 
@@ -280,7 +280,7 @@ When stats summary is done (or skipped on failure):
 - Plan file is the single source of truth for progress — always re-read it
 - No signals — just checkboxes in the plan for task progress
 - Maintain progress file (`/tmp/progress-<plan-name>.txt`) — see `prompts/progress-file.md` for format and when to write
-- Do not modify the plan file yourself — only subagents modify it
+- Do not modify the plan file yourself during the task, review, and finalize phases — only subagents modify it. The sole exception is the terminal move in step 13 (after all phases finish), which the orchestrator performs via `move-plan.sh`
 - Do not implement or fix code yourself — only subagents implement and fix
 - If a subagent fails or leaves broken code, re-run the loop — do NOT investigate or fix it yourself
 - NEVER dismiss findings as "pre-existing", "not from changes", or "architectural" — ALL findings are actionable

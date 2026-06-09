@@ -237,6 +237,7 @@ Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
 5. **Critical-only review** — 2 agents (quality + implementation), critical/major issues only + fixer
 6. **Finalize** — rebase, squash, verify (optional)
 7. **Stats summary** — single agent reads the session log + git state and reports total tokens / wall-clock / per-phase breakdown / branch churn / fixer iterations
+8. **Completion** — moves the finished plan into a `completed/` subdirectory of its plans directory and commits the move (VCS-aware via `move-plan.sh`, no push), so completed plans leave the active plans directory and stop showing up as candidates on the next run
 
 Review agents are read-only reporters. The fixer agent evaluates each finding, fixes confirmed issues, rejects false positives, and reports back.
 
