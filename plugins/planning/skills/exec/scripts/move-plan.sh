@@ -32,6 +32,12 @@ base="$(basename "$plan")"
 dest_dir="$(dirname "$plan")/completed"
 dest="$dest_dir/$base"
 
+# refuse to clobber an existing completed plan with the same name
+if [ -e "$dest" ]; then
+    echo "error: destination already exists, refusing to overwrite: $dest" >&2
+    exit 1
+fi
+
 mkdir -p "$dest_dir"
 mv "$plan" "$dest"
 

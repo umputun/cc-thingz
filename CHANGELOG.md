@@ -4,6 +4,13 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.7.6 - 2026-06-09
+
+### Bug Fixes
+
+- exec: report the plan move honestly. Step 13 hardcoded "plan moved to completed/" in the final line even though the move is best-effort, so a no-op (plan already under `completed/` or missing) or a failed move would print a false claim. The suffix is now appended only when `move-plan.sh` actually moved the file.
+- exec: `move-plan.sh` refuses to overwrite an existing destination instead of clobbering it. A same-named plan already under `completed/` now causes a non-zero exit (reported, non-blocking) rather than a silent `mv` over the existing file.
+
 ## planning v3.7.5 - 2026-06-09
 
 ### Bug Fixes
