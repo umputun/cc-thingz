@@ -271,7 +271,7 @@ This step is best-effort — if the stats agent fails or the session log path ca
 When stats summary is done (or skipped on failure):
 - Log completion to progress file: `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh <progress-file> "completed"`
 - Move the finished plan into its `completed/` subdirectory and commit it (best-effort): `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/move-plan.sh <plan-file-path>`. The script is a no-op when the plan is already under `completed/` or missing, derives the target as a `completed/` sibling of the plan's directory (so it respects a custom `plans_dir` and worktrees), and commits the move VCS-aware (git/hg). Do NOT push. If the script exits non-zero, report the failure but do not block completion.
-- Report final line: "All N tasks completed, reviews passed, branch finalized, plan moved to completed/"
+- Report the final line "All N tasks completed, reviews passed, branch finalized". Append ", plan moved to completed/" ONLY when move-plan.sh actually moved the file (it printed `moved plan to ...`); omit the suffix when the move was a no-op (already under `completed/` or missing) or exited non-zero
 
 ## Key rules
 

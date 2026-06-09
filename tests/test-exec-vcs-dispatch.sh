@@ -705,6 +705,30 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
     assert_contains "hg/move: commit records completed/ path" "$files" "docs/plans/completed/$PLAN_NAME"
 fi
 
+# test 25: destination already exists -> refuse to overwrite, exit non-zero, no commit
+echo ""
+echo "test 25: git repo, destination already exists -> refuse, no clobber"
+GIT_MV_CLOBBER="$(mk_tmp)"
+make_git_repo "$GIT_MV_CLOBBER" main
+(
+    cd "$GIT_MV_CLOBBER"
+    mkdir -p docs/plans/completed
+    echo "# new plan" >"docs/plans/$PLAN_NAME"
+    echo "# OLD COMPLETED" >"docs/plans/completed/$PLAN_NAME"
+    git add docs/plans
+    git commit -q -m "plan plus pre-existing completed"
+)
+commits_before="$(git -C "$GIT_MV_CLOBBER" rev-list --count HEAD)"
+rc=0
+(cd "$GIT_MV_CLOBBER" && bash "$MOVE_PLAN" "docs/plans/$PLAN_NAME" >/dev/null 2>&1) || rc=$?
+assert_exit_nonzero "git/clobber: refuses with non-zero exit" "$rc"
+[ -f "$GIT_MV_CLOBBER/docs/plans/$PLAN_NAME" ] && src="present" || src="gone"
+assert_output "git/clobber: source plan left in place" "present" "$src"
+dest_content="$(cat "$GIT_MV_CLOBBER/docs/plans/completed/$PLAN_NAME")"
+assert_output "git/clobber: existing destination not overwritten" "# OLD COMPLETED" "$dest_content"
+commits_after="$(git -C "$GIT_MV_CLOBBER" rev-list --count HEAD)"
+assert_output "git/clobber: no new commit" "$commits_before" "$commits_after"
+
 # summary
 echo ""
 echo "======================================"
