@@ -181,7 +181,7 @@ codex exec -m gpt-5.5 \
 **Flags:**
 - `--sandbox read-only` — codex can read all project files but cannot modify anything
 - `-m gpt-5.5` — latest model (adjust as newer versions become available)
-- `model_reasoning_effort="xhigh"` — deepest reasoning tier (Codex now exposes `xhigh` above `high`; `high` is no longer the maximum)
+- `model_reasoning_effort="xhigh"` — deepest reasoning tier
 
 ### Step 5: Present Results
 
