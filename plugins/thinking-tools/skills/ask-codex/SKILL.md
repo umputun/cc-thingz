@@ -169,10 +169,11 @@ codex exec -m gpt-5.5 \
   --sandbox read-only \
   -c model_reasoning_effort="xhigh" \
   -c stream_idle_timeout_ms=600000 \
-  "prompt here"
+  "prompt here" < /dev/null
 ```
 
 **Execution rules:**
+- Always end the invocation with `< /dev/null` (as shown). `codex exec` reads stdin to append a `<stdin>` block even when the prompt is a positional arg, so an inherited open pipe (common under a background launch) never closes and codex blocks forever on "Reading additional input from stdin…"; `/dev/null` gives immediate EOF.
 - Always use `run_in_background: true` in Bash tool
 - Monitor with BashOutput every 15-20 seconds
 - Be patient during reasoning phase (1-3 minutes of silence is normal)
@@ -256,3 +257,4 @@ Parse the JSON output and present findings sorted by severity, filtered by confi
 - **Authentication**: `codex login` if getting auth errors
 - **Timeout**: increase `stream_idle_timeout_ms` for complex analyses
 - **Off-target response**: refine prompt with more specific file:line references
+- **Hangs on "Reading additional input from stdin…"**: the invocation is missing the `< /dev/null` stdin redirect — add it (see Step 4).
