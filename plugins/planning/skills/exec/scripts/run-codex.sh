@@ -34,8 +34,6 @@ if [ "${CODEX_NO_OVERRIDES:-}" != 1 ]; then
         "-c" "model=${CODEX_MODEL:-gpt-5.5}"
         "-c" "model_reasoning_effort=xhigh"
         "-c" "stream_idle_timeout_ms=3600000"
-        "-c" "project_doc=$HOME/.claude/CLAUDE.md"
-        "-c" "project_doc=./CLAUDE.md"
     )
 fi
 

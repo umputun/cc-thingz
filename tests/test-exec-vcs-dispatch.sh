@@ -511,7 +511,7 @@ assert_contains "git: --sandbox is present" "$stub_out" "--sandbox"
 assert_contains "git: -c model= flag present" "$stub_out" "model=gpt-5.5"
 assert_contains "git: -c model_reasoning_effort= flag present" "$stub_out" "model_reasoning_effort=xhigh"
 assert_contains "git: -c stream_idle_timeout_ms= flag present" "$stub_out" "stream_idle_timeout_ms=3600000"
-assert_contains "git: project_doc=./CLAUDE.md flag present" "$stub_out" "project_doc=./CLAUDE.md"
+assert_not_contains "git: no project_doc flag (dead Codex config key, removed)" "$stub_out" "project_doc"
 assert_contains "git: prompt is passed through" "$stub_out" "hello prompt"
 
 # test 15b: git repo with CODEX_MODEL override -> model is overridden
@@ -528,7 +528,6 @@ stub_out="$(cd "$GIT_RC" && CODEX_NO_OVERRIDES=1 PATH="$STUB_DIR:$PATH" bash "$R
 assert_not_contains "git: no -c model= when CODEX_NO_OVERRIDES=1" "$stub_out" "model=gpt-5.5"
 assert_not_contains "git: no -c model_reasoning_effort= when CODEX_NO_OVERRIDES=1" "$stub_out" "model_reasoning_effort"
 assert_not_contains "git: no -c stream_idle_timeout_ms= when CODEX_NO_OVERRIDES=1" "$stub_out" "stream_idle_timeout_ms"
-assert_not_contains "git: no project_doc when CODEX_NO_OVERRIDES=1" "$stub_out" "project_doc"
 # non -c args (exec / --sandbox / prompt) must still be there
 assert_contains "git: exec still present with CODEX_NO_OVERRIDES=1" "$stub_out" "exec"
 assert_contains "git: --sandbox still present with CODEX_NO_OVERRIDES=1" "$stub_out" "--sandbox"
@@ -565,7 +564,7 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
     assert_contains "hg: --sandbox is present" "$stub_out" "--sandbox"
     assert_contains "hg: -c model= flag present" "$stub_out" "model=gpt-5.5"
     assert_contains "hg: -c model_reasoning_effort= flag present" "$stub_out" "model_reasoning_effort=xhigh"
-    assert_contains "hg: project_doc=./CLAUDE.md flag present" "$stub_out" "project_doc=./CLAUDE.md"
+    assert_not_contains "hg: no project_doc flag (dead Codex config key, removed)" "$stub_out" "project_doc"
     assert_contains "hg: prompt is passed through" "$stub_out" "hello prompt"
 
     # verify ordering: exec, then --skip-git-repo-check, then --sandbox
