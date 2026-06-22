@@ -6,7 +6,7 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # Ask Codex
 
-Consult OpenAI Codex (GPT-5) as a second opinion for investigation, debugging, or review tasks.
+Consult OpenAI Codex (GPT-5.5) as a second opinion for investigation, debugging, or review tasks.
 
 ## Activation Triggers
 
@@ -35,11 +35,21 @@ Gather context from the current conversation:
 3. **What we tried** — approaches attempted and why they failed (if applicable)
 4. **Specific question** — what exactly codex should analyze or answer
 
-If CLAUDE.md exists in the project, it will be passed as project context.
+Codex does NOT auto-load Claude Code's memory files — it only reads `AGENTS.md`. To give Codex the same project context Claude follows, prepend the memory-load preamble described in Step 3.
 
 ### Step 3: Construct Prompt
 
 Build a focused prompt. Do NOT dump entire files — codex has full project access and can read them itself. Provide file paths and line references so codex knows where to look.
+
+**Prepend a memory-load preamble.** Codex auto-loads only `AGENTS.md`; it does NOT read Claude Code's memory files (`CLAUDE.md`, `CLAUDE.local.md`, `.claude/rules/`, `~/.claude/CLAUDE.md`), so the project conventions Claude follows are invisible to Codex unless you tell it to read them. Prepend this line to the prompt:
+
+```
+First read these project guidance files if present: <ABS_HOME>/.claude/CLAUDE.md, CLAUDE.md, CLAUDE.local.md, .claude/rules/
+```
+
+- Resolve `<ABS_HOME>` to the **absolute** home path (run `echo $HOME`, e.g. `/home/<user>`) and write the literal path. Do NOT pass the string `$HOME`: the prompt is delivered via `$(cat ...)` (command-substitution output is not re-scanned for variable expansion), and Codex may open the file with a non-shell tool that won't expand it.
+- No `@` prefix — `@file` is inert in `codex exec` (literal text, not an import).
+- The project-relative paths resolve against Codex's working directory; Codex skips any that don't exist.
 
 **Template for investigation/debug:**
 
@@ -157,10 +167,8 @@ Run codex in background (it takes 2-5 minutes for complex analysis):
 ```bash
 codex exec -m gpt-5.5 \
   --sandbox read-only \
-  -c model_reasoning_effort="high" \
+  -c model_reasoning_effort="xhigh" \
   -c stream_idle_timeout_ms=600000 \
-  -c project_doc="$HOME/.claude/CLAUDE.md" \
-  -c project_doc="./CLAUDE.md" \
   "prompt here"
 ```
 
@@ -173,8 +181,7 @@ codex exec -m gpt-5.5 \
 **Flags:**
 - `--sandbox read-only` — codex can read all project files but cannot modify anything
 - `-m gpt-5.5` — latest model (adjust as newer versions become available)
-- `model_reasoning_effort="high"` — maximum reasoning depth
-- `project_doc` — passes CLAUDE.md as project context (both global and local if present)
+- `model_reasoning_effort="xhigh"` — deepest reasoning tier (Codex now exposes `xhigh` above `high`; `high` is no longer the maximum)
 
 ### Step 5: Present Results
 
