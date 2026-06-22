@@ -47,7 +47,7 @@ Build a focused prompt. Do NOT dump entire files — codex has full project acce
 First read these project guidance files if present: <ABS_HOME>/.claude/CLAUDE.md, CLAUDE.md, CLAUDE.local.md, .claude/rules/
 ```
 
-- Resolve `<ABS_HOME>` to the **absolute** home path (run `echo $HOME`, e.g. `/home/<user>`) and write the literal path. Do NOT pass the string `$HOME`: the prompt is delivered via `$(cat ...)` (command-substitution output is not re-scanned for variable expansion), and Codex may open the file with a non-shell tool that won't expand it.
+- Resolve `<ABS_HOME>` to the **absolute** home path (run `echo $HOME`, e.g. `/home/<user>`) and write the literal path — do NOT leave the string `$HOME` in the prompt. Whether `$HOME` expands depends on how the prompt is passed to Codex, and Codex may open the file with a non-shell tool that never expands it, so only a literal absolute path is reliable.
 - No `@` prefix — `@file` is inert in `codex exec` (literal text, not an import).
 - The project-relative paths resolve against Codex's working directory; Codex skips any that don't exist.
 
