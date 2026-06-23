@@ -207,6 +207,7 @@ Task structure guidelines:
 - Use specific descriptive names, not generic "[Core Logic]" or "[Implementation]"
 - Each task MUST have a **Files:** block listing files to Create/Modify (before checkboxes)
 - Aim for ~5 checkboxes per task (more is OK if logically atomic)
+- **CRITICAL: number ALL tasks with concrete sequential integers** - the two trailing tasks below are shown as "Task N-1" and "Task N" where N is a PLACEHOLDER for the total task count, NOT literal text. Substitute real numbers continuing the sequence from your last implementation task (e.g. with 14 implementation tasks they become "Task 15: Verify acceptance criteria" and "Task 16: ... Update documentation"). NEVER write the literal strings "Task N-1" or "Task N" into the plan.
 - **CRITICAL: Each task MUST end with writing/updating tests before moving to next**
   - tests are not optional - they are a required deliverable of every task
   - write tests for all NEW code added in this task
@@ -255,6 +256,7 @@ Example (NOTICE: Files block + tests as separate checklist items):
 - [ ] write tests for error/edge cases
 - [ ] run tests - must pass before next task
 
+<!-- replace "N-1" and "N" below with the actual next sequential numbers continuing from your last implementation task - do NOT emit the literal letter N -->
 ### Task N-1: Verify acceptance criteria
 - [ ] verify all requirements from Overview are implemented
 - [ ] verify edge cases are handled

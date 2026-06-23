@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.7.8 - 2026-06-23
+
+### Bug Fixes
+
+- make: instruct the plan template to renumber the two trailing tasks (verify acceptance criteria, update documentation) with concrete sequential integers. They were shown as literal "Task N-1" and "Task N" placeholders with no substitution rule, so generated plans transcribed the letter `N` verbatim instead of continuing the task numbering
+
 ## thinking-tools v1.2.2 - 2026-06-22
 
 ### Improvements
