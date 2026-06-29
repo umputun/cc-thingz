@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.8.1 - 2026-06-29
+
+### Bug Fixes
+
+- plan review: add `PLANNING_DISABLE_REVDIFF=1` to skip interactive plan review entirely on both routes (the `ExitPlanMode` hook and `/planning:make`). Under `claude /remote-control` the overlay opened on the host terminal the remote client cannot see, blocking the session indefinitely; the flag bypasses both revdiff and the `$EDITOR` fallback and falls through to the normal `ExitPlanMode` confirmation #32
+
 ## planning v3.8.0 - 2026-06-28
 
 ### New Features

@@ -52,7 +52,7 @@ cp plugins/planning/commands/make.md ~/.claude/commands/
 cp -r plugins/planning/skills/exec ~/.claude/skills/
 cp -r plugins/planning/scripts/ ~/.claude/commands/scripts
 cp -r plugins/planning/references/ ~/.claude/commands/references
-cp plugins/planning/hooks/plan-annotate.py ~/.claude/scripts/
+cp plugins/planning/scripts/plan-annotate.py ~/.claude/scripts/
 chmod +x ~/.claude/scripts/plan-annotate.py
 chmod +x ~/.claude/skills/exec/scripts/*.sh
 ```
@@ -217,6 +217,8 @@ listen_on unix:/tmp/kitty-$KITTY_PID
 
 *Note*: when `revdiff` is installed, the `ExitPlanMode` hook and `/planning:make` interactive review both route through `launch-plan-review.sh` instead, which supports a wider set of overlays: agterm, tmux, zellij, herdr, kitty, wezterm/kaku, cmux, ghostty, iTerm2, and emacs vterm. The 3-terminal list above applies only to the `$EDITOR` fallback when revdiff is not installed.
 
+*Disabling review*: set `PLANNING_DISABLE_REVDIFF=1` to skip interactive plan review entirely on both routes (revdiff and the `$EDITOR` fallback). No overlay opens and the plan proceeds to the normal `ExitPlanMode` confirmation. This exists for remote clients (`claude /remote-control`): the overlay always opens on the host terminal, which a mobile or web client cannot see or interact with, so review would otherwise block the session. The variable is read when review fires, so export it in your shell before starting a session you may later drive remotely.
+
 The overlay popup size is configurable via env vars:
 
 | Env var | Description | Default |
@@ -224,7 +226,7 @@ The overlay popup size is configurable via env vars:
 | `REVDIFF_POPUP_WIDTH` | Tmux/Zellij popup width (e.g., `100%`, `80%`) | `90%` |
 | `REVDIFF_POPUP_HEIGHT` | Tmux/Zellij popup height / wezterm split percent | `90%` |
 
-Run tests: `python3 plugins/planning/hooks/plan-annotate.py --test`
+Run tests: `python3 plugins/planning/scripts/plan-annotate.py --test`
 
 **plan-review agent** — automated plan quality reviewer. Analyzes plans for problem definition, solution correctness, scope creep, over-engineering, testing requirements, task granularity, and convention adherence. Used by the plan command's "Auto review" option. Outputs a structured report with severity-rated findings and an APPROVE/NEEDS REVISION verdict.
 

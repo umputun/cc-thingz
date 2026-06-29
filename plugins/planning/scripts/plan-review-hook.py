@@ -97,6 +97,14 @@ def main() -> None:
         make_response("ask", "no plan content in hook event")
         return
 
+    # skip interactive review entirely when disabled (e.g. claude /remote-control, where
+    # a host terminal overlay would be invisible to the remote client and block the
+    # session). falls through to the normal ExitPlanMode confirmation, which the remote
+    # client can see and act on. covers both revdiff and the plan-annotate.py fallback.
+    if os.environ.get("PLANNING_DISABLE_REVDIFF"):
+        make_response("ask", "plan review disabled via PLANNING_DISABLE_REVDIFF")
+        return
+
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
     if not plugin_root:
         make_response("ask", "CLAUDE_PLUGIN_ROOT not set")

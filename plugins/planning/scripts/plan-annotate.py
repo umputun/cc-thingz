@@ -80,6 +80,13 @@ def read_plan_from_stdin() -> str:
         return ""
 
 
+def review_disabled() -> bool:
+    """report whether interactive plan review is disabled via PLANNING_DISABLE_REVDIFF.
+    set this on a remote client (claude /remote-control), where the editor overlay would
+    open on the host terminal the remote client can't see and block the session."""
+    return bool(os.environ.get("PLANNING_DISABLE_REVDIFF"))
+
+
 def make_response(decision: str, reason: str = "") -> str:
     """build PreToolUse hook JSON response."""
     resp: dict = {
@@ -174,6 +181,8 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
 
 def run_file_mode(plan_file: Path) -> None:
     """file mode: open plan copy in editor, output diff to stdout."""
+    if review_disabled():
+        return
     if not plan_file.exists():
         print(f"error: file not found: {plan_file}", file=sys.stderr)
         sys.exit(1)
@@ -201,6 +210,9 @@ def run_file_mode(plan_file: Path) -> None:
 
 def run_hook_mode() -> None:
     """hook mode: read plan from stdin JSON, output hook response."""
+    if review_disabled():
+        print(make_response("ask", "plan review disabled via PLANNING_DISABLE_REVDIFF"))
+        return
     plan_content = read_plan_from_stdin()
     if not plan_content:
         print(make_response("ask", "no plan content in hook event"))
@@ -365,9 +377,46 @@ def run_tests() -> None:
             finally:
                 tmp.unlink(missing_ok=True)
 
+    class TestDisableReview(unittest.TestCase):
+        def setUp(self) -> None:
+            os.environ["PLANNING_DISABLE_REVDIFF"] = "1"
+
+        def tearDown(self) -> None:
+            os.environ.pop("PLANNING_DISABLE_REVDIFF", None)
+
+        def test_review_disabled_flag(self) -> None:
+            self.assertTrue(review_disabled())
+
+        def test_file_mode_no_output(self) -> None:
+            import io
+            tmp = Path(tempfile.mktemp(suffix=".md"))
+            tmp.write_text("# Plan\n- task 1\n")
+            buf, old = io.StringIO(), sys.stdout
+            sys.stdout = buf
+            try:
+                run_file_mode(tmp)
+            finally:
+                sys.stdout = old
+                tmp.unlink(missing_ok=True)
+            self.assertEqual(buf.getvalue(), "")
+
+        def test_hook_mode_ask(self) -> None:
+            import io
+            event = json.dumps({"tool_input": {"plan": "# Plan\n- task 1"}})
+            old_stdin, old_stdout = sys.stdin, sys.stdout
+            sys.stdin, buf = io.StringIO(event), io.StringIO()
+            sys.stdout = buf
+            try:
+                run_hook_mode()
+            finally:
+                sys.stdin, sys.stdout = old_stdin, old_stdout
+            out = json.loads(buf.getvalue())["hookSpecificOutput"]
+            self.assertEqual(out["permissionDecision"], "ask")
+            self.assertIn("disabled", out["permissionDecisionReason"])
+
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
-    for tc in [TestGetDiff, TestReadPlanFromStdin, TestResponses, TestFileMode]:
+    for tc in [TestGetDiff, TestReadPlanFromStdin, TestResponses, TestFileMode, TestDisableReview]:
         suite.addTests(loader.loadTestsFromTestCase(tc))
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
