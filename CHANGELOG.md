@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.8.2 - 2026-07-04
+
+### Bug Fixes
+
+- plan review `$EDITOR` fallback: add an `agterm` terminal backend to `plan-annotate.py`. In an agterm session with no `revdiff` installed, `open_editor()` only knew tmux/kitty/wezterm, so it fell through to a stray `KITTY_LISTEN_ON` and opened the editor in an invisible background kitty (or hung on the sentinel) instead of agterm. It now opens `$EDITOR` in a full-pane overlay via `agtermctl session overlay open --block` (checked before tmux/kitty, mirroring `launch-plan-review.sh`), toggling the session status indicator to blocked while up and restoring active on exit
+
 ## planning v3.8.1 - 2026-06-29
 
 ### Bug Fixes

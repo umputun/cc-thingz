@@ -203,19 +203,19 @@ Structured implementation planning with interactive annotation review and autono
 - **Step 2** — creates the plan file with tasks, file lists, test requirements, and progress tracking
 - **Step 3** — offers interactive review (opens plan in `$EDITOR` via plan-annotate), auto review, start implementation, or done
 
-**plan-annotate.py** — interactive plan annotation tool. Opens plans in your `$EDITOR` via a terminal overlay (tmux popup, kitty overlay, or wezterm split-pane), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. Two modes:
+**plan-annotate.py** — interactive plan annotation tool. Opens plans in your `$EDITOR` via a terminal overlay (agterm overlay, tmux popup, kitty overlay, or wezterm split-pane), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. Two modes:
 
 - *Hook mode* (default) — intercepts `ExitPlanMode`, opens plan in editor, denies tool call with diff if changes made, forcing revision loop
 - *File mode* (`plan-annotate.py <plan-file>`) — outputs unified diff to stdout for integration with custom workflows
 
-Requirements: tmux, kitty, or wezterm terminal, `$EDITOR` (defaults to `micro`). **Kitty users** must enable remote control in `kitty.conf`:
+Requirements: agterm, tmux, kitty, or wezterm terminal (agterm tried first), `$EDITOR` (defaults to `micro`). **Agterm users**: needs `agtermctl` on PATH (bundled with agterm), no extra config. **Kitty users** must enable remote control in `kitty.conf`:
 
 ```
 allow_remote_control yes
 listen_on unix:/tmp/kitty-$KITTY_PID
 ```
 
-*Note*: when `revdiff` is installed, the `ExitPlanMode` hook and `/planning:make` interactive review both route through `launch-plan-review.sh` instead, which supports a wider set of overlays: agterm, tmux, zellij, herdr, kitty, wezterm/kaku, cmux, ghostty, iTerm2, and emacs vterm. The 3-terminal list above applies only to the `$EDITOR` fallback when revdiff is not installed.
+*Note*: when `revdiff` is installed, the `ExitPlanMode` hook and `/planning:make` interactive review both route through `launch-plan-review.sh` instead, which supports a wider set of overlays: agterm, tmux, zellij, herdr, kitty, wezterm/kaku, cmux, ghostty, iTerm2, and emacs vterm. The 4-terminal list above applies only to the `$EDITOR` fallback when revdiff is not installed.
 
 *Disabling review*: set `PLANNING_DISABLE_REVDIFF=1` to skip interactive plan review entirely on both routes (revdiff and the `$EDITOR` fallback). No overlay opens and the plan proceeds to the normal `ExitPlanMode` confirmation. This exists for remote clients (`claude /remote-control`): the overlay always opens on the host terminal, which a mobile or web client cannot see or interact with, so review would otherwise block the session. The variable is read when review fires, so export it in your shell before starting a session you may later drive remotely.
 

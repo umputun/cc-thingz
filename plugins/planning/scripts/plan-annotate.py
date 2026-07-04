@@ -4,7 +4,7 @@
 interactive plan review hook that lets you annotate Claude's plans directly
 in your editor before approving them. when Claude calls ExitPlanMode, this
 hook intercepts the call, opens the plan in $EDITOR via a terminal overlay
-(tmux or kitty), and waits for you to review/edit. if you make changes,
+(agterm, tmux, kitty, or wezterm), and waits for you to review/edit. if you make changes,
 the hook computes a unified diff and sends it back to Claude as a denial
 reason, forcing Claude to revise the plan based on your annotations. if
 you make no changes, the normal approval dialog appears.
@@ -26,16 +26,17 @@ returns PreToolUse hook JSON response with permissionDecision:
   - "deny" → changes detected, unified diff sent as denial reason
 
 requirements:
-  - tmux, kitty, or wezterm terminal (tmux tried first, then kitty, then wezterm)
+  - agterm, tmux, kitty, or wezterm terminal (agterm tried first, then tmux, kitty, wezterm)
   - $EDITOR set (defaults to micro)
+  - agterm users: needs agtermctl on PATH (bundled with agterm); no extra config
   - kitty users: kitty.conf must have allow_remote_control and listen_on configured:
       allow_remote_control yes
       listen_on unix:/tmp/kitty-$KITTY_PID
 
-terminal priority: tmux display-popup → kitty overlay → wezterm split-pane → error
+terminal priority: agterm overlay → tmux display-popup → kitty overlay → wezterm split-pane → error
 
 limitations:
-  - requires tmux, kitty, or wezterm - without any, returns error (no annotation)
+  - requires agterm, tmux, kitty, or wezterm - without any, returns error (no annotation)
   - does not work in plain terminals (iTerm2, Terminal.app, etc.)
   - kitty requires KITTY_LISTEN_ON env var (set by kitty when listen_on is configured)
   - the hook blocks until the editor closes; timeout should be set high
@@ -109,19 +110,52 @@ def get_diff(original: str, edited: str) -> str:
 
 
 def open_editor(filepath: Path, target_window: bool = True) -> int:
-    """open file in $EDITOR via tmux popup, kitty overlay, or wezterm split-pane, blocking until editor closes.
-    tries tmux first (if $TMUX is set), then kitty, then wezterm. returns non-zero if none is available.
+    """open file in $EDITOR via a terminal overlay, blocking until the editor closes.
+    tries agterm first (if $AGTERM_SESSION_ID is set), then tmux (if $TMUX), then kitty,
+    then wezterm. returns non-zero if none is available.
     when target_window is True (hook mode), targets the kitty window from KITTY_WINDOW_ID.
-    when False (file mode), opens in the currently focused window."""
+    when False (file mode), opens in the currently focused window. agterm always targets the
+    current session via $AGTERM_SESSION_ID, so target_window does not affect it."""
     editor = os.environ.get("EDITOR", "micro")
     # resolve the first token of $EDITOR to an absolute path so that
-    # sh -c (used by kitty/wezterm overlays) can find the binary even
-    # when /opt/homebrew/bin or similar dirs are not in sh's default PATH.
+    # sh -c (used by the agterm/kitty/wezterm overlays) can find the binary
+    # even when /opt/homebrew/bin or similar dirs are not in sh's default PATH.
     editor_parts = shlex.split(editor)
     resolved = shutil.which(editor_parts[0])
     if resolved:
         editor_parts[0] = resolved
     editor_cmd = " ".join(shlex.quote(p) for p in editor_parts)
+
+    # agterm: `agtermctl session overlay open <cmd> --block` opens the editor in a full-pane
+    # overlay over the agent's own session and blocks until it exits (like tmux's display-popup -E),
+    # so no sentinel is needed. checked first so an agterm session uses its native overlay even when
+    # a multiplexer OR a stray KITTY_LISTEN_ON is also present in the environment. needs
+    # $AGTERM_SESSION_ID (set in every agterm session) and agtermctl on PATH; passes $AGTERM_SOCKET
+    # so it reaches the agterm instance hosting this session. the command string is shell-interpreted
+    # by agterm, so the shell-quoted `editor_cmd` + filepath works. sets the session status indicator
+    # to blocked while the overlay is up and restores active on every exit path.
+    agterm_session = os.environ.get("AGTERM_SESSION_ID")
+    if agterm_session and shutil.which("agtermctl"):
+        target = ["--target", agterm_session]
+        agterm_socket = os.environ.get("AGTERM_SOCKET")
+        if agterm_socket:
+            target += ["--socket", agterm_socket]
+        overlay_cmd = f"{editor_cmd} {shlex.quote(str(filepath))}"
+        subprocess.run(
+            ["agtermctl", "session", "status", "blocked", "--blink", *target],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        try:
+            subprocess.run(
+                ["agtermctl", "session", "overlay", "open", overlay_cmd, *target, "--block"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        finally:
+            subprocess.run(
+                ["agtermctl", "session", "status", "active", *target],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        return 0
 
     # tmux: display-popup -E blocks until the command exits, no sentinel needed
     if os.environ.get("TMUX") and shutil.which("tmux"):
@@ -196,7 +230,7 @@ def run_file_mode(plan_file: Path) -> None:
 
     try:
         if open_editor(tmp_path, target_window=False) != 0:
-            print("error: no overlay terminal available (requires tmux, kitty, or wezterm)", file=sys.stderr)
+            print("error: no overlay terminal available (requires agterm, tmux, kitty, or wezterm)", file=sys.stderr)
             sys.exit(1)
 
         edited_content = tmp_path.read_text()
@@ -225,7 +259,7 @@ def run_hook_mode() -> None:
 
     try:
         if open_editor(tmp_path) != 0:
-            print(make_response("ask", "no overlay terminal available (requires tmux, kitty, or wezterm), skipping plan annotation"))
+            print(make_response("ask", "no overlay terminal available (requires agterm, tmux, kitty, or wezterm), skipping plan annotation"))
             return
 
         edited_content = tmp_path.read_text()
