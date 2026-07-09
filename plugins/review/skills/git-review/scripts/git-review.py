@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """git-review.py - interactive git diff annotation tool.
 
-generates a cleaned-up diff file, opens it in $EDITOR via tmux/kitty/wezterm overlay,
+generates a cleaned-up diff file, opens it in $EDITOR via agterm/tmux/kitty/wezterm overlay,
 and tracks user annotations via a git repo in /tmp. returns the user's
 annotations (additions/edits) as a git diff on stdout.
 
@@ -20,9 +20,10 @@ each invocation regenerates the cleaned diff, commits it, opens the editor,
 and returns `git diff` output showing what the user changed.
 
 requirements:
-    - tmux, kitty, or wezterm terminal (tmux tried first, then kitty, then wezterm)
+    - agterm, tmux, kitty, or wezterm terminal (agterm tried first, then tmux, then kitty, then wezterm)
     - $EDITOR set (defaults to micro)
     - git
+    - agterm users: needs agtermctl on PATH (bundled with agterm); no extra config
     - kitty users: kitty.conf must have allow_remote_control and listen_on configured
 """
 
@@ -255,15 +256,51 @@ def setup_review_repo(review_dir: Path, content: str) -> None:
 
 
 def open_editor(filepath: Path) -> int:
-    """open file in $EDITOR via tmux popup, kitty overlay, or wezterm split-pane, blocking until editor closes.
-    tries tmux first (if $TMUX is set), then kitty, then wezterm. returns non-zero if none is available."""
+    """open file in $EDITOR via agterm overlay, tmux popup, kitty overlay, or wezterm split-pane,
+    blocking until editor closes. tries agterm first (if $AGTERM_SESSION_ID is set), then tmux
+    (if $TMUX), then kitty, then wezterm. returns non-zero if none is available."""
     editor = os.environ.get("EDITOR", "micro")
+    # $EDITOR may be multi-word (e.g. "emacsclient -c -a ''"); split to argv, resolve the
+    # first token to an absolute path (overlays' sh doesn't inherit /opt/homebrew/bin etc.),
+    # re-quote each part. quoting the whole string as one token would exec a bogus binary name.
+    editor_parts = shlex.split(editor) or ["micro"]  # guard set-but-empty $EDITOR
+    resolved = shutil.which(editor_parts[0])
+    if resolved:
+        editor_parts[0] = resolved
+    editor_cmd = " ".join(shlex.quote(p) for p in editor_parts)
+
+    # agterm: overlay open --block runs the editor full-pane and blocks (like tmux's -E), no
+    # sentinel needed. checked first so agterm wins over a stray KITTY_LISTEN_ON. needs
+    # $AGTERM_SESSION_ID + agtermctl; toggles session status blocked→active around the overlay.
+    agterm_session = os.environ.get("AGTERM_SESSION_ID")
+    if agterm_session and shutil.which("agtermctl"):
+        target = ["--target", agterm_session]
+        agterm_socket = os.environ.get("AGTERM_SOCKET")
+        if agterm_socket:
+            target += ["--socket", agterm_socket]
+        overlay_cmd = f"{editor_cmd} {shlex.quote(str(filepath))}"
+        subprocess.run(
+            ["agtermctl", "session", "status", "blocked", "--blink", *target],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        try:
+            subprocess.run(
+                ["agtermctl", "session", "overlay", "open", overlay_cmd, *target, "--block"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        finally:
+            subprocess.run(
+                ["agtermctl", "session", "status", "active", *target],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        return 0
 
     # tmux: display-popup -E blocks until the command exits, no sentinel needed
     if os.environ.get("TMUX") and shutil.which("tmux"):
         result = subprocess.run(
             ["tmux", "display-popup", "-E", "-w", "90%", "-h", "90%",
-             "-T", " Git Review ", "--", editor, str(filepath)],
+             "-T", " Git Review ", "--", "sh", "-c",
+             f"{editor_cmd} {shlex.quote(str(filepath))}"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         return result.returncode
@@ -278,7 +315,7 @@ def open_editor(filepath: Path) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         cmd = ["kitty", "@", "--to", kitty_sock, "launch", "--type=overlay",
                f"--title=Git Review: {filepath.name}"]
         # target the kitty window where claude is running, not the active one
@@ -299,7 +336,7 @@ def open_editor(filepath: Path) -> int:
         os.close(fd)
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
-        wrapper = f'{shlex.quote(editor)} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
+        wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
         subprocess.run(
             ["wezterm", "cli", "split-pane", "--bottom", "--percent", "80",
              "--pane-id", wezterm_pane, "--", "sh", "-c", wrapper],
@@ -370,7 +407,7 @@ def run_review(base_ref: str | None = None, branch: str | None = None) -> None:
 
     review_file = review_dir / "review.diff"
     if open_editor(review_file) != 0:
-        print("error: no overlay terminal available (requires tmux, kitty, or wezterm)", file=sys.stderr)
+        print("error: no overlay terminal available (requires agterm, tmux, kitty, or wezterm)", file=sys.stderr)
         sys.exit(1)
 
     # get annotations

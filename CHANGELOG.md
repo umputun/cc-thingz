@@ -4,6 +4,13 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## review v2.2.2 - 2026-07-09
+
+### Bug Fixes
+
+- git-review `$EDITOR` overlay: add an `agterm` terminal backend to `git-review.py`. In an agterm session `open_editor()` only knew tmux/kitty/wezterm, so it fell through to a stray `KITTY_LISTEN_ON` (opening the editor in an invisible background kitty) or errored out. It now opens `$EDITOR` in a full-pane overlay via `agtermctl session overlay open --block` (checked before tmux/kitty/wezterm, mirroring `planning`'s `plan-annotate.py`), toggling the session status indicator to blocked while up and restoring active on exit
+- git-review multi-word `$EDITOR`: fix `open_editor()` quoting the entire `$EDITOR` string as a single shell token, which made every overlay backend try to exec a binary literally named e.g. `emacsclient -c -a ''` and fail silently. `$EDITOR` is now `shlex.split` into argv with its first token resolved to an absolute path and each part re-quoted, so multi-word editors work across the agterm/tmux/kitty/wezterm paths
+
 ## planning v3.8.2 - 2026-07-04
 
 ### Bug Fixes

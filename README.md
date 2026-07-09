@@ -179,7 +179,7 @@ PR review, interactive git diff annotation review, and writing style tools. Inst
 
 Uses `gh` CLI for all GitHub operations and git worktrees to avoid disrupting the current checkout.
 
-**git-review** — interactive annotation-based code review. Generates a cleaned-up diff, opens it in `$EDITOR` via tmux popup, kitty overlay, or wezterm split-pane. You annotate directly in the diff, and the script returns your changes as a git diff. Claude reads annotations, fixes code, regenerates the diff, and loops until you close the editor without changes. Supports auto-detection of uncommitted changes or branch diffs.
+**git-review** — interactive annotation-based code review. Generates a cleaned-up diff, opens it in `$EDITOR` via agterm overlay, tmux popup, kitty overlay, or wezterm split-pane (agterm tried first). You annotate directly in the diff, and the script returns your changes as a git diff. Claude reads annotations, fixes code, regenerates the diff, and loops until you close the editor without changes. Supports auto-detection of uncommitted changes or branch diffs. **Agterm users**: needs `agtermctl` on PATH (bundled with agterm), no extra config.
 
 Run tests: `python3 plugins/review/skills/git-review/scripts/git-review.py --test`
 
