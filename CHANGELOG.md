@@ -4,6 +4,17 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.8.3 - 2026-07-12
+
+### Bug Fixes
+
+- plan-annotate `$EDITOR`: a malformed `$EDITOR` with an unbalanced quote (e.g. `EDITOR='emacs "'`) made `shlex.split` raise `ValueError` and abort `open_editor()` with an unhandled traceback, and a set-but-empty `$EDITOR` raised `IndexError`. Both now fall back to the default editor
+
+### Improvements
+
+- plan-annotate: use `vi` as the default editor (POSIX-standard, always present) instead of `micro` when `$EDITOR` is unset, empty, or malformed
+- plan-annotate: extract the `$EDITOR`-to-argv construction into a `build_editor_cmd()` helper and cover it with tests (single-word resolution, multi-word args, empty/malformed fallback, not-on-PATH)
+
 ## review v2.2.3 - 2026-07-12
 
 ### Bug Fixes
