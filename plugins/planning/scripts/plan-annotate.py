@@ -27,7 +27,7 @@ returns PreToolUse hook JSON response with permissionDecision:
 
 requirements:
   - agterm, tmux, kitty, or wezterm terminal (agterm tried first, then tmux, kitty, wezterm)
-  - $EDITOR set (defaults to micro)
+  - $EDITOR set (defaults to vi)
   - agterm users: needs agtermctl on PATH (bundled with agterm); no extra config
   - kitty users: kitty.conf must have allow_remote_control and listen_on configured:
       allow_remote_control yes
@@ -109,6 +109,24 @@ def get_diff(original: str, edited: str) -> str:
     return "".join(diff)
 
 
+def build_editor_cmd(editor: str) -> str:
+    """build a shell command string from a (possibly multi-word) $EDITOR value.
+
+    splits $EDITOR into argv (e.g. "emacsclient -c -a ''" -> emacsclient, -c, -a, ''),
+    resolves the first token to an absolute path (an overlay's sh doesn't inherit
+    /opt/homebrew/bin etc.), and re-quotes each part. quoting the whole string as one
+    token would exec a bogus binary name. falls back to vi on an empty or malformed
+    (unbalanced-quote) $EDITOR instead of raising."""
+    try:
+        parts = shlex.split(editor) or ["vi"]  # guard set-but-empty $EDITOR
+    except ValueError:
+        parts = ["vi"]  # malformed $EDITOR, e.g. an unbalanced quote
+    resolved = shutil.which(parts[0])
+    if resolved:
+        parts[0] = resolved
+    return " ".join(shlex.quote(p) for p in parts)
+
+
 def open_editor(filepath: Path, target_window: bool = True) -> int:
     """open file in $EDITOR via a terminal overlay, blocking until the editor closes.
     tries agterm first (if $AGTERM_SESSION_ID is set), then tmux (if $TMUX), then kitty,
@@ -116,15 +134,7 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
     when target_window is True (hook mode), targets the kitty window from KITTY_WINDOW_ID.
     when False (file mode), opens in the currently focused window. agterm always targets the
     current session via $AGTERM_SESSION_ID, so target_window does not affect it."""
-    editor = os.environ.get("EDITOR", "micro")
-    # resolve the first token of $EDITOR to an absolute path so that
-    # sh -c (used by the agterm/kitty/wezterm overlays) can find the binary
-    # even when /opt/homebrew/bin or similar dirs are not in sh's default PATH.
-    editor_parts = shlex.split(editor)
-    resolved = shutil.which(editor_parts[0])
-    if resolved:
-        editor_parts[0] = resolved
-    editor_cmd = " ".join(shlex.quote(p) for p in editor_parts)
+    editor_cmd = build_editor_cmd(os.environ.get("EDITOR", "vi"))
 
     # agterm: `agtermctl session overlay open <cmd> --block` opens the editor in a full-pane
     # overlay over the agent's own session and blocks until it exits (like tmux's display-popup -E),
@@ -448,9 +458,35 @@ def run_tests() -> None:
             self.assertEqual(out["permissionDecision"], "ask")
             self.assertIn("disabled", out["permissionDecisionReason"])
 
+    class TestBuildEditorCmd(unittest.TestCase):
+        def test_single_word_resolves_to_abs_path(self) -> None:
+            # a binary on PATH (sh always is) resolves to an absolute path
+            result = build_editor_cmd("sh")
+            self.assertTrue(result.startswith("/"))
+            self.assertTrue(result.endswith("sh"))
+
+        def test_not_on_path_left_unchanged(self) -> None:
+            # unknown binary: shutil.which returns None, token left as-is
+            self.assertEqual(build_editor_cmd("editor-not-on-path-zzz"), "editor-not-on-path-zzz")
+
+        def test_multi_word_preserves_args(self) -> None:
+            # multi-word $EDITOR splits to argv and re-quotes each part, incl. the empty arg
+            result = build_editor_cmd("editor-not-on-path-zzz -c -a ''")
+            self.assertEqual(result, "editor-not-on-path-zzz -c -a ''")
+
+        def test_empty_falls_back_to_vi(self) -> None:
+            self.assertIn("vi", build_editor_cmd(""))
+
+        def test_malformed_falls_back_to_vi(self) -> None:
+            # unbalanced quote makes shlex.split raise ValueError -> vi fallback, no crash
+            result = build_editor_cmd('emacs "')
+            self.assertIn("vi", result)
+            self.assertNotIn("emacs", result)
+
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
-    for tc in [TestGetDiff, TestReadPlanFromStdin, TestResponses, TestFileMode, TestDisableReview]:
+    for tc in [TestGetDiff, TestReadPlanFromStdin, TestResponses, TestFileMode, TestDisableReview,
+               TestBuildEditorCmd]:
         suite.addTests(loader.loadTestsFromTestCase(tc))
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
