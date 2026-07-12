@@ -208,7 +208,7 @@ Structured implementation planning with interactive annotation review and autono
 - *Hook mode* (default) — intercepts `ExitPlanMode`, opens plan in editor, denies tool call with diff if changes made, forcing revision loop
 - *File mode* (`plan-annotate.py <plan-file>`) — outputs unified diff to stdout for integration with custom workflows
 
-Requirements: agterm, tmux, kitty, or wezterm terminal (agterm tried first), `$EDITOR` (defaults to `micro`). **Agterm users**: needs `agtermctl` on PATH (bundled with agterm), no extra config. **Kitty users** must enable remote control in `kitty.conf`:
+Requirements: agterm, tmux, kitty, or wezterm terminal (agterm tried first), `$EDITOR` (defaults to `vi`). **Agterm users**: needs `agtermctl` on PATH (bundled with agterm), no extra config. **Kitty users** must enable remote control in `kitty.conf`:
 
 ```
 allow_remote_control yes

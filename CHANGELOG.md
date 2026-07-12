@@ -4,6 +4,17 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## review v2.2.3 - 2026-07-12
+
+### Bug Fixes
+
+- git-review `$EDITOR`: a malformed `$EDITOR` with an unbalanced quote (e.g. `EDITOR='emacs "'`) made `shlex.split` raise `ValueError` and abort `open_editor()` with an unhandled traceback. It now falls back to the default editor on a malformed or empty `$EDITOR`
+
+### Improvements
+
+- git-review: use `vi` as the default editor (POSIX-standard, always present) instead of `micro` when `$EDITOR` is unset, empty, or malformed
+- git-review: extract the `$EDITOR`-to-argv construction into a `build_editor_cmd()` helper and cover it with tests (single-word resolution, multi-word args, empty/malformed fallback, not-on-PATH)
+
 ## review v2.2.2 - 2026-07-09
 
 ### Bug Fixes

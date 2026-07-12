@@ -102,7 +102,7 @@ User: "review my changes"
 ## Requirements
 
 - agterm, tmux, kitty, or wezterm terminal (for editor overlay)
-- `$EDITOR` set (defaults to micro)
+- `$EDITOR` set (defaults to vi)
 - git
 - agterm users: needs `agtermctl` on PATH (bundled with agterm); no extra config
 - kitty users: kitty.conf must have `allow_remote_control yes` and `listen_on unix:/tmp/kitty-$KITTY_PID`

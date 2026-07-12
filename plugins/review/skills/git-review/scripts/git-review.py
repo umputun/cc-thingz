@@ -21,7 +21,7 @@ and returns `git diff` output showing what the user changed.
 
 requirements:
     - agterm, tmux, kitty, or wezterm terminal (agterm tried first, then tmux, then kitty, then wezterm)
-    - $EDITOR set (defaults to micro)
+    - $EDITOR set (defaults to vi)
     - git
     - agterm users: needs agtermctl on PATH (bundled with agterm); no extra config
     - kitty users: kitty.conf must have allow_remote_control and listen_on configured
@@ -255,19 +255,29 @@ def setup_review_repo(review_dir: Path, content: str) -> None:
     )
 
 
+def build_editor_cmd(editor: str) -> str:
+    """build a shell command string from a (possibly multi-word) $EDITOR value.
+
+    splits $EDITOR into argv (e.g. "emacsclient -c -a ''" -> emacsclient, -c, -a, ''),
+    resolves the first token to an absolute path (an overlay's sh doesn't inherit
+    /opt/homebrew/bin etc.), and re-quotes each part. quoting the whole string as one
+    token would exec a bogus binary name. falls back to vi on an empty or malformed
+    (unbalanced-quote) $EDITOR instead of raising."""
+    try:
+        parts = shlex.split(editor) or ["vi"]  # guard set-but-empty $EDITOR
+    except ValueError:
+        parts = ["vi"]  # malformed $EDITOR, e.g. an unbalanced quote
+    resolved = shutil.which(parts[0])
+    if resolved:
+        parts[0] = resolved
+    return " ".join(shlex.quote(p) for p in parts)
+
+
 def open_editor(filepath: Path) -> int:
     """open file in $EDITOR via agterm overlay, tmux popup, kitty overlay, or wezterm split-pane,
     blocking until editor closes. tries agterm first (if $AGTERM_SESSION_ID is set), then tmux
     (if $TMUX), then kitty, then wezterm. returns non-zero if none is available."""
-    editor = os.environ.get("EDITOR", "micro")
-    # $EDITOR may be multi-word (e.g. "emacsclient -c -a ''"); split to argv, resolve the
-    # first token to an absolute path (overlays' sh doesn't inherit /opt/homebrew/bin etc.),
-    # re-quote each part. quoting the whole string as one token would exec a bogus binary name.
-    editor_parts = shlex.split(editor) or ["micro"]  # guard set-but-empty $EDITOR
-    resolved = shutil.which(editor_parts[0])
-    if resolved:
-        editor_parts[0] = resolved
-    editor_cmd = " ".join(shlex.quote(p) for p in editor_parts)
+    editor_cmd = build_editor_cmd(os.environ.get("EDITOR", "vi"))
 
     # agterm: overlay open --block runs the editor full-pane and blocks (like tmux's -E), no
     # sentinel needed. checked first so agterm wins over a stray KITTY_LISTEN_ON. needs
@@ -543,12 +553,37 @@ def run_tests() -> None:
             finally:
                 shutil.rmtree(test_dir, ignore_errors=True)
 
+    class TestBuildEditorCmd(unittest.TestCase):
+        def test_single_word_resolves_to_abs_path(self) -> None:
+            # a binary on PATH (sh always is) resolves to an absolute path
+            result = build_editor_cmd("sh")
+            self.assertTrue(result.startswith("/"))
+            self.assertTrue(result.endswith("sh"))
+
+        def test_not_on_path_left_unchanged(self) -> None:
+            # unknown binary: shutil.which returns None, token left as-is
+            self.assertEqual(build_editor_cmd("editor-not-on-path-zzz"), "editor-not-on-path-zzz")
+
+        def test_multi_word_preserves_args(self) -> None:
+            # multi-word $EDITOR splits to argv and re-quotes each part, incl. the empty arg
+            result = build_editor_cmd("editor-not-on-path-zzz -c -a ''")
+            self.assertEqual(result, "editor-not-on-path-zzz -c -a ''")
+
+        def test_empty_falls_back_to_vi(self) -> None:
+            self.assertIn("vi", build_editor_cmd(""))
+
+        def test_malformed_falls_back_to_vi(self) -> None:
+            # unbalanced quote makes shlex.split raise ValueError -> vi fallback, no crash
+            result = build_editor_cmd('emacs "')
+            self.assertIn("vi", result)
+            self.assertNotIn("emacs", result)
+
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     for tc in [TestDetectDefaultBranch, TestGetProjectName, TestGetCurrentBranch,
                TestGetReviewDir, TestGenerateCleanDiff, TestHasUncommittedChanges,
                TestGetFileStatus, TestMakeHeader, TestSetupReviewRepo,
-               TestGetUntrackedFiles, TestGenerateUntrackedDiff]:
+               TestGetUntrackedFiles, TestGenerateUntrackedDiff, TestBuildEditorCmd]:
         suite.addTests(loader.loadTestsFromTestCase(tc))
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
