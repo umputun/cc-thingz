@@ -1,7 +1,7 @@
 {
   "name": "planning",
   "description": "Structured implementation planning, interactive annotation review, and autonomous plan execution",
-  "version": "3.8.4",
+  "version": "3.9.0",
   "author": {
     "name": "Umputun"
   },
@@ -38,6 +38,24 @@
       "type": "boolean",
       "description": "Whether to run the finalize phase (rebase and squash commits).",
       "default": true
+    },
+    "subagent_model": {
+      "title": "Subagent model",
+      "type": "string",
+      "description": "Fallback model for all exec subagents, e.g. opus, sonnet, haiku. Leave empty to inherit the orchestrator's model.",
+      "default": ""
+    },
+    "work_model": {
+      "title": "Work subagent model",
+      "type": "string",
+      "description": "Model for code-writing subagents (task, fixer, finalizer) and stats. Leave empty to use subagent_model.",
+      "default": ""
+    },
+    "review_model": {
+      "title": "Review subagent model",
+      "type": "string",
+      "description": "Model for read-only review subagents (quality, implementation, testing, simplification, documentation, smells). Leave empty to use subagent_model.",
+      "default": ""
     },
     "plans_dir": {
       "title": "Plans directory",
