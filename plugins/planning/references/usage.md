@@ -54,6 +54,9 @@ Set via `userConfig` in plugin.json (prompted at install):
 | `review_iterations` | `5` | max fix-and-recheck cycles |
 | `external_review_iterations` | `10` | max external review iterations |
 | `finalize_enabled` | `true` | run rebase + squash phase |
+| `subagent_model` | *(inherit)* | fallback model for all exec subagents, e.g. `opus` |
+| `work_model` | *(use `subagent_model`)* | model for task, fixer, finalizer, stats |
+| `review_model` | *(use `subagent_model`)* | model for review + smells agents |
 | `plans_dir` | `docs/plans` | directory for plan files |
 
 ### Customization

@@ -281,6 +281,9 @@ Configuration via `userConfig` (prompted at plugin install):
 | `review_iterations` | `5` | Max fix-and-recheck cycles during internal review |
 | `external_review_iterations` | `10` | Max iterations for external review adversarial loop |
 | `finalize_enabled` | `true` | Whether to run the finalize phase (rebase + squash) |
+| `subagent_model` | *(empty — inherit orchestrator model)* | Fallback model for all exec subagents (e.g. `opus`), so the orchestrator can stay on a cheaper model |
+| `work_model` | *(empty — use `subagent_model`)* | Model for code-writing subagents (task, fixer, finalizer) and stats |
+| `review_model` | *(empty — use `subagent_model`)* | Model for read-only review subagents (5 specialists, smells) |
 | `plans_dir` | `docs/plans` | Directory where plan files are located |
 
 Environment variables read by `run-codex.sh`:

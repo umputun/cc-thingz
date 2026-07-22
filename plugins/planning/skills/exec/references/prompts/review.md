@@ -45,7 +45,7 @@ Read the progress file at PROGRESS_FILE_PATH for context on previous review iter
 
 Tag every finding with severity (CRITICAL/MAJOR/MINOR) and format each on its own line as: `SEVERITY: file:line — description`."
 
-In your next assistant response, emit 5 Agent tool_use blocks together. Each with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the assembled prompt for one of the 5 specialists (quality, implementation, testing, simplification, documentation).
+In your next assistant response, emit 5 Agent tool_use blocks together. Each with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the assembled prompt for one of the 5 specialists (quality, implementation, testing, simplification, documentation). If `SUBAGENT_MODEL` is non-empty, also pass `model: SUBAGENT_MODEL` on each block; if empty, omit `model`.
 
 After ALL 5 agents return, produce a STRICT bullet-list report — no prose summary, no narrative, no "agents converge on" sentences. Format requirements:
 
@@ -67,7 +67,7 @@ Resolve only `quality.txt` and `implementation.txt` using the resolve script. Re
 
 "Report ONLY critical and major issues — bugs, security vulnerabilities, data loss risks, broken functionality, incorrect logic, missing critical error handling. Ignore style, minor improvements, suggestions. Tag every reported finding with severity (CRITICAL or MAJOR) and format each on its own line as: `SEVERITY: file:line — description`."
 
-In your next assistant response, emit 2 Agent tool_use blocks together. Same `mode` and `subagent_type` as comprehensive mode.
+In your next assistant response, emit 2 Agent tool_use blocks together. Same `mode`, `subagent_type`, and `SUBAGENT_MODEL` handling as comprehensive mode.
 
 After BOTH agents return, produce the same STRICT bullet-list report as comprehensive mode (groupings by severity, exact bullet shape, agent attribution preserved, no prose summary). Additional rule for this mode:
 
