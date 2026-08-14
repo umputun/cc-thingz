@@ -63,11 +63,15 @@ POPUP_H="${REVDIFF_POPUP_HEIGHT:-90%}"
 if [ -n "${AGTERM_SESSION_ID:-}" ] && command -v agtermctl >/dev/null 2>&1; then
     AGTERM_TARGET=(--target "$AGTERM_SESSION_ID")
     [ -n "${AGTERM_SOCKET:-}" ] && AGTERM_TARGET+=(--socket "$AGTERM_SOCKET")
+    # scope to the active pane so the sibling pane stays live in a split session;
+    # $AGTERM_PANE is "left" on non-split sessions, so --pane is always safe to pass
+    AGTERM_PANE_ARG=()
+    [ -n "${AGTERM_PANE:-}" ] && AGTERM_PANE_ARG=(--pane "$AGTERM_PANE")
     agtermctl session status blocked --blink "${AGTERM_TARGET[@]}" >/dev/null 2>&1 || true
     trap 'agtermctl session status active "${AGTERM_TARGET[@]}" >/dev/null 2>&1 || true; rm -f "$OUTPUT_FILE"' EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
-    agtermctl session overlay open "$REVDIFF_CMD" "${AGTERM_TARGET[@]}" --cwd "$CWD" --block >/dev/null || true
+    agtermctl session overlay open "$REVDIFF_CMD" "${AGTERM_TARGET[@]}" "${AGTERM_PANE_ARG[@]}" --cwd "$CWD" --block >/dev/null || true
     cat "$OUTPUT_FILE"
     exit 0
 fi

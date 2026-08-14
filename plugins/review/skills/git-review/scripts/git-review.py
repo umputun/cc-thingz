@@ -288,6 +288,9 @@ def open_editor(filepath: Path) -> int:
         agterm_socket = os.environ.get("AGTERM_SOCKET")
         if agterm_socket:
             target += ["--socket", agterm_socket]
+        # scope to the active pane so the sibling stays live in a split session
+        agterm_pane = os.environ.get("AGTERM_PANE")
+        pane_args = ["--pane", agterm_pane] if agterm_pane else []
         overlay_cmd = f"{editor_cmd} {shlex.quote(str(filepath))}"
         subprocess.run(
             ["agtermctl", "session", "status", "blocked", "--blink", *target],
@@ -295,7 +298,7 @@ def open_editor(filepath: Path) -> int:
         )
         try:
             subprocess.run(
-                ["agtermctl", "session", "overlay", "open", overlay_cmd, *target, "--block"],
+                ["agtermctl", "session", "overlay", "open", overlay_cmd, *target, *pane_args, "--block"],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             )
         finally:
