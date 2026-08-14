@@ -293,7 +293,7 @@ def open_editor(filepath: Path) -> int:
         pane_args = ["--pane", agterm_pane] if agterm_pane else []
         overlay_cmd = f"{editor_cmd} {shlex.quote(str(filepath))}"
         subprocess.run(
-            ["agtermctl", "session", "status", "blocked", "--blink", *target],
+            ["agtermctl", "session", "status", "blocked", "--blink", *target, *pane_args],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         try:
