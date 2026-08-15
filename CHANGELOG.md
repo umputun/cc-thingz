@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.9.0 - 2026-07-22
+
+### New Features
+
+- exec: subagent model is now configurable, so the orchestrator can stay on a cheap or usage-limited model while well-defined subagent work runs on a stronger one — e.g. orchestrate on Fable, run subagents on Opus. `subagent_model` sets the fallback for every subagent; `work_model` (task, fixer, finalizer, stats) and `review_model` (5 review specialists, smells) override it per tier. All empty (default) keeps the previous behavior of inheriting the orchestrator's model. Does not affect the external codex review, which runs through `run-codex.sh`
+
 ## planning v3.8.4 - 2026-07-12
 
 ### Bug Fixes
