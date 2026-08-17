@@ -63,14 +63,15 @@ POPUP_H="${REVDIFF_POPUP_HEIGHT:-90%}"
 if [ -n "${AGTERM_SESSION_ID:-}" ] && command -v agtermctl >/dev/null 2>&1; then
     AGTERM_TARGET=(--target "$AGTERM_SESSION_ID")
     [ -n "${AGTERM_SOCKET:-}" ] && AGTERM_TARGET+=(--socket "$AGTERM_SOCKET")
-    # scope status and overlay to the active pane so the sibling pane stays live in a split session;
-    # $AGTERM_PANE is "left" on non-split sessions, so --pane is always safe to pass
+    # scope status and overlay to the active pane so the sibling pane stays live in a split session.
+    # session status accepts left|right|scratch; overlay open only accepts left|right (a scratch
+    # pane falls back to full-session overlay).
     AGTERM_STATUS=(session status blocked --blink "${AGTERM_TARGET[@]}")
     AGTERM_OVERLAY=(session overlay open "$REVDIFF_CMD" "${AGTERM_TARGET[@]}")
-    if [ -n "${AGTERM_PANE:-}" ]; then
-        AGTERM_STATUS+=(--pane "$AGTERM_PANE")
-        AGTERM_OVERLAY+=(--pane "$AGTERM_PANE")
-    fi
+    [ -n "${AGTERM_PANE:-}" ] && AGTERM_STATUS+=(--pane "$AGTERM_PANE")
+    case "${AGTERM_PANE:-}" in
+        left|right) AGTERM_OVERLAY+=(--pane "$AGTERM_PANE") ;;
+    esac
     AGTERM_OVERLAY+=(--cwd "$CWD" --block)
     agtermctl "${AGTERM_STATUS[@]}" >/dev/null 2>&1 || true
     trap 'agtermctl session status active "${AGTERM_TARGET[@]}" >/dev/null 2>&1 || true; rm -f "$OUTPUT_FILE"' EXIT

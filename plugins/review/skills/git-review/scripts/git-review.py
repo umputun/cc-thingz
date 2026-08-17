@@ -23,7 +23,7 @@ requirements:
     - agterm, tmux, kitty, or wezterm terminal (agterm tried first, then tmux, then kitty, then wezterm)
     - $EDITOR set (defaults to vi)
     - git
-    - agterm users: needs agtermctl on PATH (bundled with agterm); no extra config
+    - agterm users: needs agtermctl on PATH (bundled with agterm 0.20.0+); no extra config
     - kitty users: kitty.conf must have allow_remote_control and listen_on configured
 """
 
@@ -288,17 +288,19 @@ def open_editor(filepath: Path) -> int:
         agterm_socket = os.environ.get("AGTERM_SOCKET")
         if agterm_socket:
             target += ["--socket", agterm_socket]
-        # scope to the active pane so the sibling stays live in a split session
+        # scope status and overlay to the active pane so the sibling stays live in a split session.
+        # session status accepts left|right|scratch; overlay open only accepts left|right
         agterm_pane = os.environ.get("AGTERM_PANE")
-        pane_args = ["--pane", agterm_pane] if agterm_pane else []
+        status_pane_args = ["--pane", agterm_pane] if agterm_pane else []
+        overlay_pane_args = ["--pane", agterm_pane] if agterm_pane in ("left", "right") else []
         overlay_cmd = f"{editor_cmd} {shlex.quote(str(filepath))}"
         subprocess.run(
-            ["agtermctl", "session", "status", "blocked", "--blink", *target, *pane_args],
+            ["agtermctl", "session", "status", "blocked", "--blink", *target, *status_pane_args],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         try:
             subprocess.run(
-                ["agtermctl", "session", "overlay", "open", overlay_cmd, *target, *pane_args, "--block"],
+                ["agtermctl", "session", "overlay", "open", overlay_cmd, *target, *overlay_pane_args, "--block"],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             )
         finally:
