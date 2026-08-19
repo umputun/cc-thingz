@@ -9,7 +9,7 @@ set -e
 platform="$1"
 
 if [ -z "$platform" ]; then
-    echo "error: platform required (github, gitlab, gitea)"
+    echo "error: platform required (github, gitlab, gitea)" >&2
     exit 1
 fi
 

@@ -79,8 +79,10 @@ Add the plan-annotate hook to `~/.claude/settings.json`:
 ```bash
 cp -r plugins/release-tools/skills/new ~/.claude/skills/
 cp -r plugins/release-tools/skills/last-tag ~/.claude/skills/
-chmod +x ~/.claude/skills/release/scripts/*.sh
+chmod +x ~/.claude/skills/new/scripts/*.sh
 ```
+
+Note: when installed manually, update the `${CLAUDE_PLUGIN_ROOT}` references inside `new/SKILL.md` to use the appropriate local paths instead.
 
 **thinking-tools** — skills:
 ```bash

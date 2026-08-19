@@ -45,7 +45,7 @@ Use AskUserQuestion tool to get release type:
 ### Step 2: Detect Platform
 
 ```bash
-platform=$(sh ${CLAUDE_PLUGIN_ROOT}/skills/release/scripts/detect-platform.sh)
+platform=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/new/scripts/detect-platform.sh)
 ```
 
 ### Step 3: Validate Prerequisites
@@ -69,7 +69,7 @@ last_tag=$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || echo "none
 ### Step 5: Calculate New Version
 
 ```bash
-new_version=$(sh ${CLAUDE_PLUGIN_ROOT}/skills/release/scripts/calc-version.sh <release_type>)
+new_version=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/new/scripts/calc-version.sh <release_type>)
 ```
 
 Verify tag doesn't already exist:
@@ -82,7 +82,7 @@ fi
 ### Step 6: Generate Release Notes
 
 ```bash
-notes=$(sh ${CLAUDE_PLUGIN_ROOT}/skills/release/scripts/get-notes.sh "$platform")
+notes=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/new/scripts/get-notes.sh "$platform")
 ```
 
 Script logic:

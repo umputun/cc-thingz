@@ -4,6 +4,15 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## release-tools v2.0.3 - 2026-08-19
+
+### Bug Fixes
+
+- the new-release skill now points at the real helper scripts. `ebd1cfb` renamed `skills/release` to `skills/new` but left the workflow steps calling `${CLAUDE_PLUGIN_ROOT}/skills/release/scripts/*.sh`, a path that does not exist in the plugin, so every step failed at runtime. The same rename left a stale `chmod` path in the manual install instructions
+- helper scripts are invoked with `bash` instead of `sh`, matching every other plugin. They carry a `#!/bin/bash` shebang and use bash-only syntax (`[[ ]]`, here-strings), which fails under a POSIX `sh` such as dash
+- `detect-platform.sh` now reports why it failed. `set -e` aborted on the failing `git remote get-url` before the check that prints `error: no origin remote configured` could run, so the caller got git's exit code and no explanation. Running outside a repository is reported separately
+- all three helpers write their errors to stderr. The skill captures stdout as the value (`platform=$(...)`), so an error message on stdout was swallowed into the variable and never shown
+
 ## planning v3.8.5 - 2026-08-17
 
 ### Bug Fixes
