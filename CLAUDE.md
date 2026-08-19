@@ -48,7 +48,8 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
 ## Testing
 
 - Python scripts include embedded tests run via `--test` flag: `python3 plugins/planning/scripts/plan-annotate.py --test`
-- Shell test scripts live in `tests/`: `bash tests/test-planning-resolve-rules.sh`, `bash tests/test-brainstorm-resolve-rules.sh`
+- Shell test scripts live in `tests/`: `bash tests/test-planning-resolve-rules.sh`, `bash tests/test-brainstorm-resolve-rules.sh`. CI runs every `tests/test-*.sh`, so a new file there is picked up automatically
+- CI helper scripts live in `.github/scripts/`. `check-frontmatter.py` validates YAML frontmatter across the repo (`python3 .github/scripts/check-frontmatter.py .`) and carries its own tests (`--test`)
 
 ## Plugin Design Constraints
 

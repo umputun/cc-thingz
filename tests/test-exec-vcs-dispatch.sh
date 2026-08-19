@@ -36,23 +36,18 @@ assert_temp_dir() {
     esac
 }
 
-# track all temp dirs created so cleanup hits every one
-TMP_DIRS=()
+# every scratch dir lives under one root: mk_tmp runs inside command
+# substitutions, so a dir recorded in an array there would not survive the
+# subshell and cleanup would miss it
+TMP_ROOT="$(mktemp -d)"
+assert_temp_dir "$TMP_ROOT"
+
 mk_tmp() {
-    local d
-    d="$(mktemp -d)"
-    assert_temp_dir "$d"
-    TMP_DIRS+=("$d")
-    echo "$d"
+    mktemp -d "$TMP_ROOT/scratch-XXXXXX"
 }
 
 cleanup() {
-    local d
-    for d in "${TMP_DIRS[@]:-}"; do
-        if [ -n "$d" ] && [ -d "$d" ]; then
-            rm -rf "$d"
-        fi
-    done
+    rm -rf "$TMP_ROOT"
     return 0
 }
 trap cleanup EXIT
