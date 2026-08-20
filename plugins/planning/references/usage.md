@@ -40,7 +40,7 @@ The planning plugin has three components: make (plan creation), exec (autonomous
 2. Asks about worktree isolation (worktree vs current directory)
 3. Creates a feature branch
 4. Executes tasks sequentially — one subagent per task, commits after each
-5. Runs multi-phase review: comprehensive (iteration 1) then critical re-check loop → code smells → external (codex) → critical-only
+5. Runs multi-phase review: comprehensive (iteration 1) then critical re-check loop → code smells → external review → critical-only
 6. Optional finalize: rebase and squash commits
 7. Stats summary: aggregate per-phase tokens/duration + git diff stats and report
 
@@ -49,7 +49,7 @@ Set via `userConfig` in plugin.json (prompted at install):
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `external_review_cmd` | *(auto-detect codex)* | external review tool command |
+| `external_review_cmd` | *(empty — falls back to codex)* | external review tool command; prompt appended as final argv, findings on stdout |
 | `task_retries` | `1` | retries for failed tasks |
 | `review_iterations` | `5` | max fix-and-recheck cycles |
 | `external_review_iterations` | `10` | max external review iterations |
@@ -62,7 +62,14 @@ Prompts and agent definitions use a three-layer override chain:
 2. User: `$CLAUDE_PLUGIN_DATA/prompts/` and `$CLAUDE_PLUGIN_DATA/agents/`
 3. Bundled defaults
 
-A `SessionStart` hook copies bundled defaults to `$CLAUDE_PLUGIN_DATA` on first run — edit the copies to customize.
+Nothing is copied anywhere automatically. Installs before planning 3.10.0 did seed `$CLAUDE_PLUGIN_DATA` with
+copies of every bundled prompt and agent — those copies still shadow the bundled defaults and no longer track
+upgrades, so check that directory and delete anything you did not deliberately edit.
+
+To customize a file, copy it into an override path first with the `customize-file.sh` helper. The runnable commands,
+and what an override commits you to, are in the **Customization** paragraph of the project README:
+https://github.com/umputun/cc-thingz#planning — kept there because both plugin paths have to be spelled out
+literally, and only the README carries that form. That paragraph is authoritative; do not restate it here.
 
 ### Customization patterns
 

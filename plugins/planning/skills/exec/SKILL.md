@@ -111,7 +111,7 @@ For each `### Task N:` section in the plan:
 Then add review tasks:
 - `TaskCreate(subject="Review phase 1: comprehensive", description="5 parallel review agents + fixer", activeForm="Running review phase 1...")`
 - `TaskCreate(subject="Review phase 2: code smells", description="smells agent + fixer", activeForm="Running smells review...")`
-- `TaskCreate(subject="Review phase 3: codex external", description="adversarial codex/claude review loop", activeForm="Running codex review...")`
+- `TaskCreate(subject="Review phase 3: external", description="adversarial external review loop", activeForm="Running external review...")`
 - `TaskCreate(subject="Review phase 4: critical only", description="2 review agents + fixer", activeForm="Running review phase 4...")`
 - `TaskCreate(subject="Finalize", description="rebase, clean up commits, verify", activeForm="Finalizing...")`
 - `TaskCreate(subject="Stats summary", description="aggregate token/duration/git stats from session log", activeForm="Summarizing stats...")`
@@ -211,40 +211,43 @@ Run once (no loop):
 
 5. **After fixer returns** → report fixes to user. Proceed to the next phase.
 
-### Step 9. Review phase 3 — codex external review
+### Step 9. Review phase 3 — external review
 
 **hg skip**: Detect VCS with `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`. If `vcs` is `hg`, skip this entire step. Report to user: "hg detected — skipping external review (git-only). Override `prompts/codex-review.md` via `.claude/exec-plan/` to enable hg-native review." Proceed directly to step 10.
 
-Report to user: "--- Review phase 3: codex external review ---"
+Report to user: "--- Review phase 3: external review ---"
 
-Adversarial loop: codex reviews the code, fixer evaluates and fixes, codex re-reviews. The loop exits early once an iteration produces no `CRITICAL` or `MAJOR` findings — minor-only iterations still get fixed by the fixer, but no further codex round-trip happens. Subsequent phases (smells, critical-only) act as the final safety net.
+Adversarial loop: the external reviewer reviews the code, fixer evaluates and fixes, the reviewer re-reviews. The loop exits early once an iteration produces no `CRITICAL` or `MAJOR` findings — minor-only iterations still get fixed by the fixer, but no further round-trip happens. Subsequent phases (smells, critical-only) act as the final safety net.
 
-Determine the external review command:
-- If `external_review_cmd` userConfig is set, use that command
-- Else check if codex is available: `which codex`
-- If neither is available, report "External review: skipped (no external tool available)" and proceed to step 10
+All invocations go through `run-external-review.sh`, which takes the `external_review_cmd` userConfig value as its first argument and the prompt as its second. An empty first argument makes it fall back to codex. Do NOT call `run-codex.sh` directly — it cannot honor `external_review_cmd`. Older `codex-review.md` overrides may carry launcher or availability instructions before `## Prompt`; ignore those operational lines. Step 9 alone controls reviewer invocation and skip/failure handling.
+
+If the script exits 127 AND its stderr carries the `run-external-review:` marker, no external tool is available: report `External review: skipped — <stderr line>`, quoting the reason verbatim (it distinguishes a configured command missing from `PATH` from codex missing with no command set), and proceed to step 10. A 127 without that marker came from the reviewer itself — typically a wrapper script whose own inner tool is missing — and is a reviewer failure, not a skip.
+
+Any other non-zero exit is a reviewer failure too, not a clean review: report `External review: reviewer failed (exit <code>) — <stderr line>` and proceed to step 10. So is an exit 0 that produced no output: report `External review: reviewer failed (no output)`, adding any stderr line the reviewer printed. Never treat empty output as "no findings" — the severity scan in item 4 would find nothing and the phase would report success without a review having run. The tool result merges the reviewer's stdout and stderr, so judge this on the combined text; a reviewer whose only output is progress chatter on stderr, with no findings and no `NO ISSUES FOUND` marker, is a reviewer failure as well.
 
 Loop up to `external_review_iterations` times (userConfig, default: 10):
 
-1. **Resolve the codex prompt** — read `prompts/codex-review.md` through the override chain. Replace `DIFF_COMMAND` using `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`: for `git`, iteration 1 is `git diff DEFAULT_BRANCH...HEAD` and subsequent iterations are `git diff`; for `hg`, iteration 1 is `hg diff -r 'ancestor(., DEFAULT_BRANCH)'` and subsequent iterations are `hg diff`. Also replace `PLAN_FILE_PATH` (so codex can read the plan for intent) and `PROGRESS_FILE_PATH` (so codex can read prior review iterations and fixer responses and avoid re-reporting fixed issues).
+1. **Resolve the review prompt** — read `prompts/codex-review.md` through the override chain. Replace `DIFF_COMMAND` using `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`: for `git`, iteration 1 is `git diff DEFAULT_BRANCH...HEAD` and subsequent iterations are `git diff`; for `hg`, iteration 1 is `hg diff -r 'ancestor(., DEFAULT_BRANCH)'` and subsequent iterations are `hg diff`. Also replace `PLAN_FILE_PATH` (so the reviewer can read the plan for intent) and `PROGRESS_FILE_PATH` (so the reviewer can read prior review iterations and fixer responses and avoid re-reporting fixed issues).
 
-2. **Run codex** — `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/run-codex.sh "<resolved prompt>"` with `run_in_background: true`. You will be notified when done — do NOT poll or sleep.
+2. **Run the external reviewer** — first write the resolved prompt to `/tmp/external-review-<plan-name>.txt` with the Write tool (same `<plan-name>` as the progress file, overwrite it each iteration), then run `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/run-external-review.sh '${user_config.external_review_cmd}' "$(cat /tmp/external-review-<plan-name>.txt)"` with `run_in_background: true`. Do NOT paste the prompt text inline: it contains backticks and may contain `$` (the bundled prompt asks for findings formatted as `` `SEVERITY: file:line - description` ``), and the shell would run those as command substitutions before the reviewer saw the prompt. Write the file with the Write tool for that same reason — `echo "…" >` or a heredoc with an unquoted delimiter expands the backticks and `$` at write time, so the file the reviewer reads already has the format instruction blanked out. You will be notified when done — do NOT poll or sleep.
 
-3. **Check codex output** — if codex reports "NO ISSUES FOUND" or equivalent, phase is done. Proceed to step 10.
+   The first argument is substituted by Claude Code before you read this file — pass whatever it resolved to through verbatim, and keep the **single** quotes exactly as written. They matter in both directions: they stop a configured value's own `$` or backtick from being expanded by the shell, and when the option has never been configured Claude Code leaves the `${user_config....}` reference in place, which unquoted makes bash abort the whole call with `bad substitution` and report as a reviewer failure. Single-quoted, the literal token reaches the script, which recognises it as unconfigured and takes the codex fallback. If a value needs a literal `'`, wrap the command in a script and point the setting at that instead.
 
-4. **Classify severity** — scan the codex output for `CRITICAL` or `MAJOR` markers (case-insensitive whole-word match). Set `has_blocking = true` if either is present, otherwise `has_blocking = false`. Findings without an explicit severity tag are treated as MINOR — `has_blocking` stays false in that case.
+3. **Check the output** — the `NO ISSUES FOUND` marker counts as clean only when item 4's severity scan also comes back empty, so run that scan first. Marker present and no `CRITICAL` or `MAJOR` found → phase is done, proceed to step 10. That marker is the only clean result — the contract makes it mandatory — so never infer "clean" from output that lacks it. But the marker alone does not make a review clean either: a reviewer that echoes the phrase while still reporting a blocking finding is treated like any other finding output, and the findings win. Non-empty output without the marker must carry at least one `CRITICAL`, `MAJOR` or `MINOR` tag somewhere in the combined stdout/stderr text — a tag is what makes the output a review rather than a message. Output with neither the marker nor any tag is a reviewer failure: report `External review: reviewer failed (no findings and no clean marker)`, quoting the reviewer's first output line, and proceed to step 10. This is a whole-output check, not a per-line one — do not require every line to be tagged, or wrapped descriptions and blank separators would fail a real review. Output that clears this gate falls through to item 4 for severity classification.
 
-5. **Report codex findings to user** — show a compact list (one line per finding).
+4. **Classify severity** — scan the reviewer output for `CRITICAL` or `MAJOR` markers (case-insensitive whole-word match). Set `has_blocking = true` if either is present, otherwise `has_blocking = false`. Findings without an explicit severity tag are treated as MINOR — `has_blocking` stays false in that case. That default applies to untagged lines sitting alongside at least one tagged line; item 3 has already rejected output carrying no tag at all, so it can never make an untagged non-review read as minor findings.
 
-6. **Spawn a fixer agent** — same as other review phases. Resolve `prompts/fixer.md`, pass codex output as FINDINGS_LIST. Fixer verifies, fixes, commits, reports FIXES.
+5. **Report findings to user** — show a compact list (one line per finding).
+
+6. **Spawn a fixer agent** — same as other review phases, with `description: "Fixer - external review"` so the stats phase can group this run under review phase 3. Resolve `prompts/fixer.md`, pass the reviewer output as FINDINGS_LIST. Fixer verifies, fixes, commits, reports FIXES.
 
 7. **Report fixer results to user** — show FIXES section. Log to progress file.
 
 8. **Decide whether to loop**:
-   - If `has_blocking` is false → report "Codex review: only minor findings — fixes applied, stopping loop" and proceed to step 10.
+   - If `has_blocking` is false → report "External review: only minor findings — fixes applied, stopping loop" and proceed to step 10.
    - Otherwise → loop back to step 1.
 
-If `external_review_iterations` reached with critical/major issues still found, report "Codex review: max iterations reached, moving on" and continue.
+If `external_review_iterations` reached with critical/major issues still found, report "External review: max iterations reached, moving on" and continue.
 
 ### Step 10. Review phase 4 — critical only
 
