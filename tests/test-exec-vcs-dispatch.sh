@@ -429,6 +429,235 @@ assert_output "git/new: commit subject matches" "add newfile" "$subject"
 files="$(git -C "$GIT_SC_NEW" show --name-only --pretty=format: HEAD | sed '/^$/d')"
 assert_output "git/new: commit contains newfile.txt" "newfile.txt" "$files"
 
+# test 11b: anything staged before the call must stay out of the commit and stay staged.
+# regression for the git arm committing the whole index instead of the listed files
+echo ""
+echo "test 11b: git repo, unrelated staged file -> not committed, still staged"
+GIT_SC_SCOPE="$(mk_tmp)"
+make_git_repo "$GIT_SC_SCOPE" main
+(
+    cd "$GIT_SC_SCOPE"
+    echo "a" >a.txt
+    echo "b" >b.txt
+    git add a.txt b.txt
+    git commit -q -m "seed both"
+    echo "a2" >a.txt
+    echo "b2" >b.txt
+    git add b.txt
+)
+rc=0
+(cd "$GIT_SC_SCOPE" && bash "$STAGE_AND_COMMIT" "commit a only" a.txt >/dev/null 2>&1) || rc=$?
+assert_output "git/scope: exit code 0" "0" "$rc"
+files="$(git -C "$GIT_SC_SCOPE" show --name-only --pretty=format: HEAD | sed '/^$/d')"
+assert_output "git/scope: commit contains only a.txt" "a.txt" "$files"
+staged="$(git -C "$GIT_SC_SCOPE" diff --cached --name-only)"
+assert_output "git/scope: b.txt is still staged afterwards" "b.txt" "$staged"
+
+# test 11c: a pre-commit hook that reformats and re-adds files writes into the temporary
+# index git builds for a path-scoped commit. without the trailing path-scoped reset the real
+# index keeps the pre-hook content and every commit leaves a phantom staged change behind
+echo ""
+echo "test 11c: git repo, restaging pre-commit hook -> no phantom staged change"
+GIT_SC_HOOK="$(mk_tmp)"
+HOOK_DIR="$(mk_tmp)"
+cat >"$HOOK_DIR/pre-commit" <<'HOOK'
+#!/bin/sh
+for f in $(git diff --cached --name-only --diff-filter=ACM -- "*.txt"); do
+    tr "a-z" "A-Z" <"$f" >"$f.tmp" && mv "$f.tmp" "$f"
+    git add -- "$f"
+done
+exit 0
+HOOK
+chmod +x "$HOOK_DIR/pre-commit"
+make_git_repo "$GIT_SC_HOOK" main
+(
+    cd "$GIT_SC_HOOK"
+    echo "seed" >seed.txt
+    git add seed.txt
+    git commit -q -m "seed"
+    git config core.hooksPath "$HOOK_DIR"
+    echo "src" >src.txt
+    echo "other" >other.txt
+    git add other.txt
+)
+rc=0
+(cd "$GIT_SC_HOOK" && bash "$STAGE_AND_COMMIT" "add src" src.txt >/dev/null 2>&1) || rc=$?
+assert_output "git/hook: exit code 0" "0" "$rc"
+assert_output "git/hook: HEAD holds the hook's formatting" "SRC" "$(git -C "$GIT_SC_HOOK" show HEAD:src.txt)"
+assert_output "git/hook: index agrees with HEAD" "SRC" "$(git -C "$GIT_SC_HOOK" show ":src.txt")"
+assert_output "git/hook: worktree agrees with HEAD" "SRC" "$(cat "$GIT_SC_HOOK/src.txt")"
+assert_output "git/hook: no phantom diff for the listed path" "" "$(git -C "$GIT_SC_HOOK" diff --name-only -- src.txt)"
+assert_output "git/hook: unrelated staged file survives" "other.txt" "$(git -C "$GIT_SC_HOOK" diff --cached --name-only)"
+assert_output "git/hook: hook did not reach the unrelated file" "other" "$(git -C "$GIT_SC_HOOK" show ":other.txt")"
+
+# test 11f: a hook may stage a path the caller never listed, such as a regenerated lockfile.
+# that path is committed from the temporary index, so reconciling only the listed paths would
+# leave it in the real index as a staged deletion of a file present in HEAD and the worktree
+echo ""
+echo "test 11f: git repo, hook stages an unlisted path -> index still agrees with HEAD"
+GIT_SC_OUTSIDE="$(mk_tmp)"
+OUTSIDE_HOOK_DIR="$(mk_tmp)"
+cat >"$OUTSIDE_HOOK_DIR/pre-commit" <<'HOOK'
+#!/bin/sh
+echo "generated" >gen.lock
+git add -- gen.lock
+exit 0
+HOOK
+chmod +x "$OUTSIDE_HOOK_DIR/pre-commit"
+make_git_repo "$GIT_SC_OUTSIDE" main
+(
+    cd "$GIT_SC_OUTSIDE"
+    echo "seed" >seed.txt
+    git add seed.txt
+    git commit -q -m "seed"
+    git config core.hooksPath "$OUTSIDE_HOOK_DIR"
+    echo "src" >src.txt
+)
+rc=0
+(cd "$GIT_SC_OUTSIDE" && bash "$STAGE_AND_COMMIT" "add src" src.txt >/dev/null 2>&1) || rc=$?
+assert_output "git/outside: exit code 0" "0" "$rc"
+files="$(git -C "$GIT_SC_OUTSIDE" show --name-only --pretty=format: HEAD | sed '/^$/d' | sort | tr '\n' ' ')"
+assert_output "git/outside: commit carries the hook's unlisted path" "gen.lock src.txt " "$files"
+assert_output "git/outside: no staged deletion left behind" "" "$(git -C "$GIT_SC_OUTSIDE" status --porcelain)"
+
+# test 11g: diff-tree reports paths from the repository root while reset resolves them against
+# the current directory, so a call made from a subdirectory must still reconcile the index
+echo ""
+echo "test 11g: git repo, called from a subdirectory -> index still agrees with HEAD"
+GIT_SC_SUBDIR="$(mk_tmp)"
+SUBDIR_HOOK_DIR="$(mk_tmp)"
+cat >"$SUBDIR_HOOK_DIR/pre-commit" <<'HOOK'
+#!/bin/sh
+root=$(git rev-parse --show-toplevel)
+echo "generated" >"$root/gen.lock"
+git add -- "$root/gen.lock"
+exit 0
+HOOK
+chmod +x "$SUBDIR_HOOK_DIR/pre-commit"
+make_git_repo "$GIT_SC_SUBDIR" main
+(
+    cd "$GIT_SC_SUBDIR"
+    mkdir -p services/foo
+    echo "seed" >seed.txt
+    git add seed.txt
+    git commit -q -m "seed"
+    git config core.hooksPath "$SUBDIR_HOOK_DIR"
+    echo "src" >services/foo/src.txt
+)
+rc=0
+(cd "$GIT_SC_SUBDIR/services/foo" && bash "$STAGE_AND_COMMIT" "feat: x" src.txt >/dev/null 2>&1) || rc=$?
+assert_output "git/subdir: exit code 0" "0" "$rc"
+files="$(git -C "$GIT_SC_SUBDIR" show --name-only --pretty=format: HEAD | sed '/^$/d' | sort | tr '\n' ' ')"
+assert_output "git/subdir: commit carries both paths" "gen.lock services/foo/src.txt " "$files"
+assert_output "git/subdir: no staged deletion left behind" "" "$(git -C "$GIT_SC_SUBDIR" status --porcelain)"
+
+# test 11h: file names are literal paths, not globs. without GIT_LITERAL_PATHSPECS a name
+# holding glob characters matches a different file, so the named one keeps a stale index entry
+# while unrelated staged work is silently unstaged
+echo ""
+echo "test 11h: git repo, glob characters in a filename -> matched literally"
+GIT_SC_GLOB="$(mk_tmp)"
+make_git_repo "$GIT_SC_GLOB" main
+(
+    cd "$GIT_SC_GLOB"
+    mkdir -p docs
+    echo "bracket" >'docs/task[1].md'
+    echo "plain" >docs/task1.md
+    git add docs
+    git commit -q -m "seed docs"
+    echo "bracket2" >'docs/task[1].md'
+    echo "plain2" >docs/task1.md
+    git add docs/task1.md
+)
+rc=0
+(cd "$GIT_SC_GLOB" && bash "$STAGE_AND_COMMIT" "update bracket" 'docs/task[1].md' >/dev/null 2>&1) || rc=$?
+assert_output "git/glob: exit code 0" "0" "$rc"
+files="$(git -C "$GIT_SC_GLOB" show --name-only --pretty=format: HEAD | sed '/^$/d')"
+assert_output "git/glob: commit contains only the named file" 'docs/task[1].md' "$files"
+assert_output "git/glob: unrelated staged file untouched" "docs/task1.md" "$(git -C "$GIT_SC_GLOB" diff --cached --name-only)"
+
+# test 11i: an empty path is a match-all git pathspec, so it has to be rejected before it
+# reaches git or the call silently commits the whole tree instead of failing
+echo ""
+echo "test 11i: git repo, empty file argument -> refused, nothing committed"
+GIT_SC_EMPTY="$(mk_tmp)"
+make_git_repo "$GIT_SC_EMPTY" main
+(
+    cd "$GIT_SC_EMPTY"
+    echo "a" >a.txt
+    echo "b" >b.txt
+    git add a.txt b.txt
+    git commit -q -m "seed"
+    echo "a2" >a.txt
+    echo "b2" >b.txt
+)
+before="$(git -C "$GIT_SC_EMPTY" rev-parse HEAD)"
+rc=0
+err="$( (cd "$GIT_SC_EMPTY" && bash "$STAGE_AND_COMMIT" "msg" "" 2>&1 >/dev/null) )" || rc=$?
+assert_exit_nonzero "git/empty: exits non-zero" "$rc"
+assert_contains "git/empty: names the empty argument" "$err" "empty file argument"
+assert_output "git/empty: no commit made" "$before" "$(git -C "$GIT_SC_EMPTY" rev-parse HEAD)"
+
+# test 11d: a rejected commit leaves its files staged. the next call must commit only its own
+# files rather than sweeping up the failed call's leftovers under the wrong message
+echo ""
+echo "test 11d: git repo, failed commit then disjoint call -> no carryover"
+GIT_SC_FAIL="$(mk_tmp)"
+FAIL_HOOK_DIR="$(mk_tmp)"
+cat >"$FAIL_HOOK_DIR/pre-commit" <<'HOOK'
+#!/bin/sh
+marker="$(git rev-parse --absolute-git-dir)/reject-once"
+if [ ! -f "$marker" ]; then
+    touch "$marker"
+    exit 1
+fi
+exit 0
+HOOK
+chmod +x "$FAIL_HOOK_DIR/pre-commit"
+make_git_repo "$GIT_SC_FAIL" main
+(
+    cd "$GIT_SC_FAIL"
+    echo "seed" >seed.txt
+    git add seed.txt
+    git commit -q -m "seed"
+    git config core.hooksPath "$FAIL_HOOK_DIR"
+    echo "one" >task1.txt
+)
+rc=0
+(cd "$GIT_SC_FAIL" && bash "$STAGE_AND_COMMIT" "feat: task 1" task1.txt >/dev/null 2>&1) || rc=$?
+assert_exit_nonzero "git/carryover: rejected commit exits non-zero" "$rc"
+assert_output "git/carryover: rejected files stay staged" "task1.txt" "$(git -C "$GIT_SC_FAIL" diff --cached --name-only)"
+(cd "$GIT_SC_FAIL" && echo "two" >task2.txt)
+rc=0
+(cd "$GIT_SC_FAIL" && bash "$STAGE_AND_COMMIT" "feat: task 2" task2.txt >/dev/null 2>&1) || rc=$?
+assert_output "git/carryover: second call exit code 0" "0" "$rc"
+files="$(git -C "$GIT_SC_FAIL" show --name-only --pretty=format: HEAD | sed '/^$/d')"
+assert_output "git/carryover: second commit contains only task2.txt" "task2.txt" "$files"
+assert_output "git/carryover: task1.txt still staged for the retry" "task1.txt" "$(git -C "$GIT_SC_FAIL" diff --cached --name-only)"
+
+# test 11e: a path-scoped commit must still record a removal, with the reset that follows
+# leaving no residue for the deleted path
+echo ""
+echo "test 11e: git repo, deleted tracked file -> removal recorded, scope held"
+GIT_SC_DEL="$(mk_tmp)"
+make_git_repo "$GIT_SC_DEL" main
+(
+    cd "$GIT_SC_DEL"
+    echo "seed" >seed.txt
+    echo "gone" >gone.txt
+    echo "other" >other.txt
+    git add seed.txt gone.txt
+    git commit -q -m "seed"
+    rm -f gone.txt
+    git add other.txt
+)
+rc=0
+(cd "$GIT_SC_DEL" && bash "$STAGE_AND_COMMIT" "remove gone" gone.txt >/dev/null 2>&1) || rc=$?
+assert_output "git/deleted: exit code 0" "0" "$rc"
+status="$(git -C "$GIT_SC_DEL" show --name-status --pretty=format: HEAD | sed '/^$/d')"
+assert_output "git/deleted: removal recorded" "D	gone.txt" "$status"
+assert_output "git/deleted: other.txt still staged" "other.txt" "$(git -C "$GIT_SC_DEL" diff --cached --name-only)"
+
 if [ "$HG_AVAILABLE" -eq 1 ]; then
     # test 12: hg repo, modified tracked file -> committed via hg commit -A
     echo ""
@@ -470,6 +699,28 @@ if [ "$HG_AVAILABLE" -eq 1 ]; then
     assert_output "hg/new: commit subject matches" "add newfile" "$subject"
     files="$(cd "$HG_SC_NEW" && hg log -l 1 -T '{files}')"
     assert_output "hg/new: commit contains newfile.txt" "newfile.txt" "$files"
+
+    # test 13b: hg counterpart of 11b. hg has no index, so the unrelated change is a modified
+    # tracked file rather than a staged one; it must stay out of the commit and stay pending
+    echo ""
+    echo "test 13b: hg repo, unrelated modified file -> not committed, still pending"
+    HG_SC_SCOPE="$(mk_tmp)"
+    make_hg_repo "$HG_SC_SCOPE"
+    (
+        cd "$HG_SC_SCOPE"
+        echo "a" >a.txt
+        echo "b" >b.txt
+        hg add a.txt b.txt >/dev/null
+        hg commit -m "seed both" >/dev/null
+        echo "a2" >a.txt
+        echo "b2" >b.txt
+    )
+    rc=0
+    (cd "$HG_SC_SCOPE" && bash "$STAGE_AND_COMMIT" "commit a only" a.txt >/dev/null 2>&1) || rc=$?
+    assert_output "hg/scope: exit code 0" "0" "$rc"
+    files="$(cd "$HG_SC_SCOPE" && hg log -l 1 -T '{files}')"
+    assert_output "hg/scope: commit contains only a.txt" "a.txt" "$files"
+    assert_output "hg/scope: b.txt is still pending afterwards" "M b.txt" "$(cd "$HG_SC_SCOPE" && hg status)"
 
     # test 14: hg repo with deleted tracked file -> hg commit -A records the removal
     echo ""

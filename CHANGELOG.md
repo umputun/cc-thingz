@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.9.1 - 2026-08-20
+
+### Bug Fixes
+
+- exec: `stage-and-commit.sh` no longer commits files outside the list it was given. The git arm ran `git add -- <files>` and then a bare `git commit`, which commits the whole index, so anything staged before the call was swept in — per-task commits stopped being a record of what the task changed, and a rejected commit left its own files staged for the next call to carry into an unrelated commit under the wrong message. The commit is now scoped to the listed paths, matching what the hg arm already did. A path-scoped commit runs hooks against a temporary index, so nothing a `pre-commit` hook stages reaches the real index — neither a reformatted copy of a listed file nor an unlisted one the hook adds itself, such as a regenerated lockfile. Every path the commit actually recorded is reconciled once it succeeds, so the index agrees with HEAD either way; reconciling only the listed paths would leave an unlisted one sitting in the index as a staged deletion of a file present in both HEAD and the working tree. Work that is staged but not committed is left staged rather than committed or discarded. File names are passed as `:(literal)` pathspecs so a name holding `*`, `?` or `[...]` matches itself instead of some other file, and the reconciliation anchors its paths with `:(top)` so a call made from a subdirectory still lands. An empty file argument is refused up front, since as a pathspec it would match everything under the current directory. Related to #46, reported by @paskal
+
 ## planning v3.9.0 - 2026-08-20
 
 ### New Features
