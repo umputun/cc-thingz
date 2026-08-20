@@ -21,6 +21,12 @@ Helper scripts in skill's `scripts/` directory (use `${CLAUDE_PLUGIN_ROOT}` for 
 - `calc-version.sh <type>` - outputs new version (e.g., `v1.2.3`)
 - `get-notes.sh <platform>` - outputs release notes (PRs/MRs or commits)
 
+Every helper exits non-zero and prints the reason on stderr. If any of Steps 2, 5 or 6
+fails, report that text to the user and **abort the workflow** - do not continue with an
+empty value. `get-notes.sh` in particular fails when the forge CLI is missing,
+unauthenticated or rate-limited; continuing there publishes a release whose notes list
+none of its PRs.
+
 ## Workflow
 
 ### Step 1: Ask Release Type

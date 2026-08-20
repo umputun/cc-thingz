@@ -25,6 +25,11 @@ Partly mitigated by PR #44: `var=$(cmd)` propagates the substitution's exit stat
 surfaces both a non-zero code and the stderr text to the agent. Before that PR the error text was captured
 *into* `$platform`, which was strictly worse.
 
+Partly landed: the Scripts block now carries the exit-non-zero/abort line, added
+alongside the `get-notes.sh` forge-CLI failure fix (the failure it describes became
+reachable and loud there). Steps 2, 5 and the `:55-57` echo-without-abort shape are
+untouched.
+
 Open and unresolved: `plugins/release-tools/skills/last-tag/SKILL.md:20` says "**Important**: Avoid `$()`
 command substitution in Bash tool - use sequential steps", while this skill's entire workflow is built on
 `$()` captures. One plugin ships two contradictory conventions. If that note reflects a real limitation the

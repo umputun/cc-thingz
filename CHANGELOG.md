@@ -15,6 +15,30 @@ Entries are sorted by plugin version date, newest first.
 ### New Features
 
 - plan-review overlay: add an `orca` terminal backend to `launch-plan-review.sh`. Inside the Orca app (`TERM_PROGRAM=Orca`) the launcher had no matching branch, so the `ExitPlanMode` hook and `/planning:make` interactive review fell through to "no overlay terminal available" even with revdiff installed. The new branch opens revdiff in a new terminal tab via the orca CLI (`terminal create --command --focus`, pinned to the caller's worktree card through `ORCA_WORKTREE_ID`), blocks on a sentinel file until revdiff exits, then closes the tab with `terminal close --tab`. A sentinel is needed because `terminal create --command` runs inside an interactive shell that stays open after the command, so `terminal wait --for exit` never fires
+## release-tools v2.0.5 - 2026-08-20
+
+### Bug Fixes
+
+- `get-notes.sh` aborts when the forge CLI fails instead of shipping release notes with every PR entry missing. The CLI sat at the head of a `cli | jq | while` pipeline, so the script's exit status was the loop's — always 0 — and the CLI's own diagnostics went to `/dev/null`. `gh` missing, unauthenticated, rate-limited or pointed at the wrong repository all read as "this release has no PRs", and the workflow wrote those notes to the changelog and published the release with nothing indicating a failure. The Gitea branch was worse: a missing `tea` was wrapped in `command -v` with no `else`, a completely silent no-op. This is the same exit-0 hole the v2.0.4 unknown-platform guard closed, reached by the far more common route
+- `get-notes.sh` reports a `jq` failure too. `jq` is not installed by default on macOS, and a forge that renames a JSON field fails the same way — both drained the pipeline and left notes that listed no PRs
+- `get-notes.sh` initialises `tag_date` unconditionally. It was only ever assigned inside `if [ -n "$last_tag" ]`, so in an untagged repository it kept whatever an inherited environment variable of that name held and filtered PRs against it. The tag-date fallback also gained a `|| true`, since under `set -e` a git failure there killed the run with a bare exit code and no message
+- `SKILL.md` tells the agent that the helpers exit non-zero with the reason on stderr, and to abort rather than continue with an empty value. The Scripts block documented only what each helper prints on stdout, so the failures above had no documented consequence even once they were loud. Partly addresses `docs/backlog/release-skill-never-tells-agent-to-abort.md`
+
+### Other
+
+- `tests/test-release-tools.sh` covers a failing forge CLI on all three platforms and a failing `jq`, asserting a non-zero exit, empty stdout, and a diagnostic naming the tool — the previous commit-grouping tests stubbed `gh` as always-failing and asserted success, which locked the old behaviour in
+
+## release-tools v2.0.4 - 2026-08-20
+
+### Bug Fixes
+
+- `get-notes.sh` no longer drops PRs merged just after the last tag. The cutoff came from `git log --format=%aI`, which keeps the tag author's local UTC offset, while the forge APIs report merge times in UTC — and `jq` compares the two as plain strings. For a tagger at `+02:00` every PR merged within two hours after the tag compared as older than it and vanished from the release notes. The tag date is now rendered in UTC with the same `Z` suffix the APIs use
+- `get-notes.sh` takes the cutoff from the tag's own date rather than the tagged commit's author date. An author date survives rebases and cherry-picks, so it can sit days before the tag that points at it — and every PR merged in that window got re-listed in the next release's notes, having already shipped in the previous one. The date now comes from `git for-each-ref --format=%(creatordate:…)`, which is the tagger time for an annotated tag and the committer time for a lightweight one
+- `get-notes.sh` rejects an unknown platform. Anything other than `github`, `gitlab` or `gitea` fell through all three collection branches and returned commit-only notes with exit 0, which reads as a successful run that simply found no PRs
+
+### Other
+
+- extended `tests/test-release-tools.sh` to cover the paths these fixes touch: the `glab repo view` fallback for self-hosted GitLab, GitLab and Gitea PR collection (whose `jq` field names had never been exercised, so a typo in either produced empty notes silently), an unknown platform, the tag-date cutoff against merge times half an hour either side of the tag, and a tag created hours after its commit was authored. The forge CLIs are stubbed so results depend on neither the network nor what is installed
 
 ## release-tools v2.0.3 - 2026-08-19
 
