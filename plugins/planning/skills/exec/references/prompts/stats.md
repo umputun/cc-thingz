@@ -28,7 +28,7 @@ Group subagents by phase using the `description` field:
 - "QA critical re-check", "Implementation critical re-check" → Review phase 1 critical re-check
 - "Code smells review", "Smells analysis" → Review phase 2 smells
 - "Fixer - smells" → Smells fixer
-- "Fixer - codex", "Codex fixer" → Review phase 3 codex fixer
+- "Fixer - external review", "Fixer - codex", "Codex fixer" → Review phase 3 external review fixer
 - "QA critical pass", "Implementation critical pass" → Review phase 4 critical-only
 - "Finalize" → Finalize
 
@@ -38,7 +38,7 @@ A phase's parallel execution detection: if all agents within a phase have meta m
 
 Read `PROGRESS_FILE_PATH` for:
 - Plan name, branch
-- Codex review outcome (NO ISSUES / clean / max iterations / minor-only early exit)
+- External review outcome (NO ISSUES / clean / max iterations / minor-only early exit)
 - Fixer iteration count per phase
 - Final state ("completed", "max iterations reached", or partial)
 
@@ -80,8 +80,8 @@ Top files by churn:
 
 ### Notable
 
-- Codex severity exit: <yes/no, reason>
-- Fixer iterations: phase 1: <N>, phase 4: <N>, smells: <N>, codex: <N>
+- External review severity exit: <yes/no, reason>
+- Fixer iterations: phase 1: <N>, phase 4: <N>, smells: <N>, external review: <N>
 - Final state: <completed | max-iter-hit | aborted>
 ```
 
@@ -91,6 +91,6 @@ Top files by churn:
 - Be precise with numbers — use actual values from the logs, not estimates.
 - Format tokens as "Nk" when >= 1000 (e.g., 78k, 1.2M).
 - Format durations as "Xm Ys" for runs over 60s, else "Ys" or "Xms" for very short.
-- If a section has no data (e.g., codex didn't run on hg), write "n/a" rather than omitting the line.
+- If a section has no data (e.g., external review didn't run on hg), write "n/a" rather than omitting the line.
 - Keep the report compact — this is a summary, not a transcript.
 ```

@@ -240,7 +240,7 @@ Run tests: `python3 plugins/planning/scripts/plan-annotate.py --test`
 1. **Task loop** — one subagent per task section, commits after each, retries on failure
 2. **Comprehensive review** — 5 parallel agents (quality, implementation, testing, simplification, documentation) + fixer
 3. **Code smells** — smells agent checks conventions, CLAUDE.md rules, code style + fixer
-4. **External review** — auto-detects `codex` CLI or uses custom command, adversarial loop with severity-aware early exit (stops after the first iteration that finds no critical/major issues; minor findings are still fixed)
+4. **External review** — always runs through `run-external-review.sh`: the configured `external_review_cmd`, or `codex` when that is unset. Adversarial loop with severity-aware early exit (stops after the first iteration that finds no critical/major issues; minor findings are still fixed). A tool that is not installed makes the phase skip; a tool that runs and exits non-zero, or exits 0 with no output, is reported as a reviewer failure rather than a clean review
 5. **Critical-only review** — 2 agents (quality + implementation), critical/major issues only + fixer
 6. **Finalize** — rebase, squash, verify (optional)
 7. **Stats summary** — single agent reads the session log + git state and reports total tokens / wall-clock / per-phase breakdown / branch churn / fixer iterations
@@ -261,11 +261,28 @@ To customize, place your modified version in the override path. For example, to 
 ```
 .claude/exec-plan/prompts/review.md
 ```
-Or at the user level (applies to all projects). A `SessionStart` hook copies bundled defaults to `${CLAUDE_PLUGIN_DATA}` on first run — edit the copies there to customize. To find the directory, run `ls ~/.claude/plugins/data/` and look for the planning plugin entry:
+Or at the user level (applies to all projects). To find `<plugin-id>`, run `ls ~/.claude/plugins/data/` and look for the planning plugin entry:
 ```
 ~/.claude/plugins/data/<plugin-id>/prompts/review.md
 ```
 Same pattern works for any prompt or agent file — just mirror the path under the override directory.
+
+Nothing is copied into the override directories automatically. Installs before planning 3.10.0 did seed the user-level directory with copies of every bundled prompt and agent — those copies still shadow the bundled defaults and no longer track upgrades, so check `~/.claude/plugins/data/<plugin-id>/` and delete anything you did not deliberately edit.
+
+To start from the bundled version of a file, use the `customize-file.sh` helper, which copies it into place and prints the destination. `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_DATA}` only expand inside plugin-loaded skill files, so spell both paths out when running this yourself:
+```bash
+# paths for a marketplace install; adjust if you installed the plugin some other way,
+# and confirm the data dir against `ls ~/.claude/plugins/data/`
+PLUGIN_ROOT=~/.claude/plugins/marketplaces/umputun-cc-thingz/plugins/planning
+PLUGIN_DATA=~/.claude/plugins/data/planning-umputun-cc-thingz
+
+# project level, writes .claude/exec-plan/prompts/review.md
+bash "$PLUGIN_ROOT/skills/exec/scripts/customize-file.sh" prompts/review.md
+
+# user level, applies to all projects
+bash "$PLUGIN_ROOT/skills/exec/scripts/customize-file.sh" prompts/review.md "$PLUGIN_DATA"
+```
+An override shadows the bundled default permanently and will not pick up changes from later plugin upgrades, so copy only the files you intend to edit. Delete the override to return to the bundled version.
 
 Bundled prompts: `task.md`, `fixer.md`, `review.md`, `codex-review.md`, `finalizer.md`, `stats.md`, `progress-file.md`
 Bundled agents: `quality.txt`, `implementation.txt`, `testing.txt`, `simplification.txt`, `documentation.txt`, `smells.txt`
@@ -281,12 +298,29 @@ Configuration via `userConfig` (prompted at plugin install):
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `external_review_cmd` | *(empty — auto-detect codex)* | Command for external code review tool |
+| `external_review_cmd` | *(empty — falls back to codex)* | Command for an external code review tool. See the contract below |
 | `task_retries` | `1` | Retries for failed tasks before stopping |
 | `review_iterations` | `5` | Max fix-and-recheck cycles during internal review |
 | `external_review_iterations` | `10` | Max iterations for external review adversarial loop |
 | `finalize_enabled` | `true` | Whether to run the finalize phase (rebase + squash) |
 | `plans_dir` | `docs/plans` | Directory where plan files are located |
+
+**External review contract** — review phase 3 always runs through `run-external-review.sh`, which receives the `external_review_cmd` value and the resolved prompt. When the setting is empty it falls back to codex via `run-codex.sh`. A custom command must:
+
+- be able to run shell commands and read files in the working tree — the prompt tells the reviewer to run a `git diff`, then read the plan file, the progress file, and source files for context. A plain text-in/text-out LLM CLI satisfies every other bullet here and reviews nothing
+- accept the prompt as its final argument (the command string may carry flags, for example `mytool review --strict`; arguments containing spaces are not supported, so wrap those in a script)
+- write findings to stdout, one per line, tagged `CRITICAL`, `MAJOR`, or `MINOR`, and print `NO ISSUES FOUND` when clean
+- sandbox itself — the reviewer must not modify the working tree, since fixes are applied by a separate fixer agent
+- exit `0` even when it reports findings
+- read nothing from stdin — the script redirects it from `/dev/null`, so a tool that waits for input would hang the run rather than review it
+
+The configured value is shell-parsed before the script sees it — Claude Code substitutes it into the command line that launches `run-external-review.sh`. It lands inside single quotes, so the shell passes it through as one argument and `$`, backtick, `"` and `\` are inert, while spaces and `;` are safe; the split into command and flags is done by the script's own `read -ra`. Only a literal `'` cannot be expressed — wrap a command that needs one in a script and point the setting at that. Plugin config comes from user, flag, and policy settings only — never from project settings — so a checked-out repository cannot set this value.
+
+Leaving the setting alone is supported and takes the codex fallback. Claude Code's skill-content substitution does not merge in the schema default the way the hook and MCP paths do: with no saved value it leaves the `${user_config.external_review_cmd}` reference in the skill text verbatim. The script recognises that literal token as "not configured" and falls back to codex, printing a note on stderr — so a plugin that was never taken through `/plugin configure` still runs review phase 3.
+
+The script exits `127` when the configured command (or codex) is not on `PATH`, which makes the run skip the phase instead of treating it as a review failure. Both such messages carry a `run-external-review:` marker on stderr, and the run requires that marker before it treats a `127` as a skip — so a `127` raised by the reviewer itself (a wrapper script whose own inner tool is missing) is reported as a reviewer failure rather than silently skipping the review.
+
+The prompt reaches the tool as a single argv element read from a file, not pasted into the command line, since it contains backticks that a shell would otherwise run as command substitutions.
 
 Environment variables read by `run-codex.sh`:
 
