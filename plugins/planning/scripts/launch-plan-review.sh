@@ -2,7 +2,7 @@
 # launch revdiff for plan file review via terminal overlay.
 # usage: launch-plan-review.sh <plan-file-path>
 # output: annotations from revdiff stdout (empty if no annotations)
-# supports: agterm, tmux, zellij, herdr, kitty, wezterm/kaku, cmux, ghostty, iTerm2, emacs vterm
+# supports: agterm, tmux, zellij, herdr, orca, kitty, wezterm/kaku, cmux, ghostty, iTerm2, emacs vterm
 
 set -euo pipefail
 
@@ -185,6 +185,55 @@ LAUNCHER
         sleep 0.3
     done
     herdr tab close "$HERDR_TAB_ID" >/dev/null 2>&1 || true
+    rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
+    cat "$OUTPUT_FILE"
+    exit 0
+fi
+
+# orca: open a new terminal tab via the orca CLI (the Orca app sets TERM_PROGRAM=Orca).
+# `terminal create --command` runs the command inside an interactive shell that stays
+# open afterwards, so `terminal wait --for exit` never fires — block on a sentinel file
+# instead and close the tab explicitly once revdiff exits
+if [ "${TERM_PROGRAM:-}" = "Orca" ] && command -v orca >/dev/null 2>&1; then
+    SENTINEL=$(mktemp "$TMPBASE/plan-review-done-XXXXXX")
+    rm -f "$SENTINEL"
+
+    LAUNCH_SCRIPT=$(mktemp "$TMPBASE/plan-review-launch-XXXXXX")
+    trap 'rm -f "$OUTPUT_FILE" "$SENTINEL" "$LAUNCH_SCRIPT"' EXIT
+    cat > "$LAUNCH_SCRIPT" <<LAUNCHER
+#!/bin/sh
+$REVDIFF_CMD; touch $(sq "$SENTINEL")
+LAUNCHER
+    chmod +x "$LAUNCH_SCRIPT"
+
+    # pin the tab to the caller's worktree card (ORCA_WORKTREE_ID is set in every Orca
+    # terminal) so it opens next to the session that asked for the review
+    ORCA_ARGS=(terminal create --title "$OVERLAY_TITLE" --command "sh $(sq "$LAUNCH_SCRIPT")" --focus --json)
+    [ -n "${ORCA_WORKTREE_ID:-}" ] && ORCA_ARGS+=(--worktree "id:$ORCA_WORKTREE_ID")
+    ORCA_NEW=$(orca "${ORCA_ARGS[@]}" 2>&1) || {
+        echo "error: orca terminal create failed: $ORCA_NEW" >&2
+        rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
+        exit 1
+    }
+    # parse the handle: jq when available, grep fallback otherwise. || true keeps a
+    # parse miss from tripping set -e so the explicit check below can report it
+    ORCA_HANDLE=""
+    if command -v jq >/dev/null 2>&1; then
+        ORCA_HANDLE=$(printf '%s' "$ORCA_NEW" | jq -r '.result.terminal.handle // empty' 2>/dev/null || true)
+    fi
+    if [ -z "$ORCA_HANDLE" ]; then
+        ORCA_HANDLE=$(printf '%s' "$ORCA_NEW" | grep -o '"handle": *"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)"$/\1/' || true)
+    fi
+    if [ -z "$ORCA_HANDLE" ]; then
+        echo "error: orca terminal create did not return a terminal handle: $ORCA_NEW" >&2
+        rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
+        exit 1
+    fi
+
+    while [ ! -f "$SENTINEL" ]; do
+        sleep 0.3
+    done
+    orca terminal close --terminal "$ORCA_HANDLE" --tab >/dev/null 2>&1 || true
     rm -f "$SENTINEL" "$LAUNCH_SCRIPT"
     cat "$OUTPUT_FILE"
     exit 0
@@ -451,5 +500,5 @@ LAUNCHER
     exit 0
 fi
 
-echo "error: no overlay terminal available (requires agterm, tmux, zellij, herdr, kitty, wezterm, kaku, cmux, ghostty, iTerm2, or emacs vterm)" >&2
+echo "error: no overlay terminal available (requires agterm, tmux, zellij, herdr, orca, kitty, wezterm, kaku, cmux, ghostty, iTerm2, or emacs vterm)" >&2
 exit 1

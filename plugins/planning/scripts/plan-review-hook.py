@@ -12,8 +12,8 @@ returns PreToolUse hook JSON response with permissionDecision:
 
 requirements:
   - revdiff (preferred) or $EDITOR (fallback)
-  - revdiff path: agterm, tmux, zellij, herdr, kitty, wezterm, kaku, cmux,
-    ghostty, iTerm2, or emacs vterm
+  - revdiff path: agterm, tmux, zellij, herdr, orca, kitty, wezterm, kaku,
+    cmux, ghostty, iTerm2, or emacs vterm
   - $EDITOR fallback (plan-annotate.py): agterm, tmux, kitty, or wezterm
 """
 

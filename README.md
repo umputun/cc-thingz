@@ -217,7 +217,7 @@ allow_remote_control yes
 listen_on unix:/tmp/kitty-$KITTY_PID
 ```
 
-*Note*: when `revdiff` is installed, the `ExitPlanMode` hook and `/planning:make` interactive review both route through `launch-plan-review.sh` instead, which supports a wider set of overlays: agterm, tmux, zellij, herdr, kitty, wezterm/kaku, cmux, ghostty, iTerm2, and emacs vterm. The 4-terminal list above applies only to the `$EDITOR` fallback when revdiff is not installed.
+*Note*: when `revdiff` is installed, the `ExitPlanMode` hook and `/planning:make` interactive review both route through `launch-plan-review.sh` instead, which supports a wider set of overlays: agterm, tmux, zellij, herdr, orca, kitty, wezterm/kaku, cmux, ghostty, iTerm2, and emacs vterm. The 4-terminal list above applies only to the `$EDITOR` fallback when revdiff is not installed.
 
 *Disabling review*: set `PLANNING_DISABLE_REVDIFF=1` to skip interactive plan review entirely on both routes (revdiff and the `$EDITOR` fallback). No overlay opens and the plan proceeds to the normal `ExitPlanMode` confirmation. This exists for remote clients (`claude /remote-control`): the overlay always opens on the host terminal, which a mobile or web client cannot see or interact with, so review would otherwise block the session. The variable is read when review fires, so export it in your shell before starting a session you may later drive remotely.
 

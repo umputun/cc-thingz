@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.9.0 - 2026-08-20
+
+### New Features
+
+- plan-review overlay: add an `orca` terminal backend to `launch-plan-review.sh`. Inside the Orca app (`TERM_PROGRAM=Orca`) the launcher had no matching branch, so the `ExitPlanMode` hook and `/planning:make` interactive review fell through to "no overlay terminal available" even with revdiff installed. The new branch opens revdiff in a new terminal tab via the orca CLI (`terminal create --command --focus`, pinned to the caller's worktree card through `ORCA_WORKTREE_ID`), blocks on a sentinel file until revdiff exits, then closes the tab with `terminal close --tab`. A sentinel is needed because `terminal create --command` runs inside an interactive shell that stays open after the command, so `terminal wait --for exit` never fires
+
 ## release-tools v2.0.3 - 2026-08-19
 
 ### Bug Fixes
