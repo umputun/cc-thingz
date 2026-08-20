@@ -2,3 +2,6 @@
 
 # ralphex progress logs
 .ralphex/progress/
+
+# revmux round archives -- the profile is checked in, the runs are not
+.revmux/tasks/
