@@ -5,3 +5,7 @@
 
 # revmux round archives -- the profile is checked in, the runs are not
 .revmux/tasks/
+
+# python bytecode
+__pycache__/
+*.pyc
