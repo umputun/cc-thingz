@@ -41,4 +41,6 @@ fi
 # <stdin> block even when a prompt arg is given, so an inherited open pipe
 # (e.g. background launch) would block read_to_end forever. /dev/null gives
 # immediate EOF; empty stdin is ignored when a prompt arg is present.
-codex "${args[@]}" "$prompt" < /dev/null
+# exec so a kill on the background task reaches codex itself rather than this
+# wrapper shell, which run-external-review.sh's own exec chain relies on
+exec codex "${args[@]}" "$prompt" < /dev/null
