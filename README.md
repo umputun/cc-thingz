@@ -118,7 +118,10 @@ cp -r plugins/workflow/skills/clarify ~/.claude/skills/
 cp -r plugins/workflow/skills/wrong ~/.claude/skills/
 cp -r plugins/workflow/skills/md-copy ~/.claude/skills/
 cp -r plugins/workflow/skills/txt-copy ~/.claude/skills/
+cp -r plugins/workflow/skills/backlog ~/.claude/skills/
 ```
+
+Note: the slug form taught inside `backlog/SKILL.md` is `/workflow:backlog <slug>`; it is `/backlog <slug>` when installed manually.
 
 Restart Claude Code for changes to take effect.
 
@@ -143,7 +146,7 @@ To keep plugins current automatically, enable `/plugin` → **Marketplaces** →
 | [release-tools](#release-tools) | Release workflow — auto-versioning, release notes, changelog |
 | [thinking-tools](#thinking-tools) | Analytical thinking — dialectic analysis, root cause investigation, codex consultation |
 | [skill-eval](#skill-eval) | Forces skill evaluation before every response |
-| [workflow](#workflow) | Session helpers — knowledge capture, confusion handling, clipboard copy |
+| [workflow](#workflow) | Session helpers and deferred-work backlog — knowledge capture, confusion handling, clipboard copy, backlog items |
 
 ### brainstorm
 
@@ -335,7 +338,7 @@ By default, Claude Code often ignores available skills and jumps straight to gen
 
 ### workflow
 
-Session workflow helpers for knowledge capture, confusion handling, course correction, and clipboard operations.
+Session workflow helpers for knowledge capture, confusion handling, course correction, and clipboard operations, plus the repo's deferred-work backlog.
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
@@ -344,6 +347,7 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 | skill | `/workflow:wrong` | Reset and re-evaluate when current approach isn't working |
 | skill | `/workflow:md-copy` | Format final answer as markdown and copy to clipboard |
 | skill | `/workflow:txt-copy` | Copy generated text content to clipboard |
+| skill | `/workflow:backlog` | Read, work, and maintain deferred-work items in `docs/backlog/` |
 
 **learn** — reviews conversation history, extracts strategic project knowledge (architecture patterns, conventions, operational insights), and saves selected items to the project CLAUDE.md. When `CLAUDE.local.md` is present, per-developer / per-checkout discoveries (machine-specific tooling, environment quirks) are routed there instead. Defers to any project-defined memory-placement guidance documented in `CLAUDE.md` or `.claude/rules/`. Uses granular selection via AskUserQuestion so the user picks exactly what to keep.
 
@@ -354,6 +358,8 @@ Session workflow helpers for knowledge capture, confusion handling, course corre
 **md-copy** — formats the session's final answer as clean markdown (bold titles instead of headings, proper tables, code blocks) and copies to clipboard. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
 
 **txt-copy** — copies generated text (emails, messages, letters) to clipboard via a timestamped temp file. Cross-platform clipboard detection (macOS pbcopy, Linux xclip/xsel).
+
+**backlog** — maintains `docs/backlog/`, one markdown file per deferred item, for work that is real but not being done now. Each item carries `worth` (yes/later/no) and `added` (ISO date) in frontmatter, plus `where` (path:line) when the item is anchored to one place, with a free body. Lists the backlog with each present `where` verified against the current tree so stale anchors are reported as stale rather than as work, takes a slug argument to jump straight to one item, and dedupes on `where` then slug before appending. No checkbox and no in-progress marker: the item is deleted in the commit that lands its fix. Refuses to write into a branch other than the repository default without asking first. Git only — the lifecycle is expressed in `git rm`, branch detection, and staging.
 
 ## Custom Rules
 

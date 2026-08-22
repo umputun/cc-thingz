@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## workflow v1.2.0 - 2026-08-22
+
+### New Features
+
+- `/workflow:backlog` reads, works, and maintains a repo's deferred-work items in `docs/backlog/` — one markdown file per item, `worth`/`where`/`added` frontmatter, and a create-then-delete lifecycle where the item is removed in the commit that lands its fix. Listing verifies each item's `where` against the current tree and reports a stale anchor as stale rather than as work; appending dedupes on `where` then slug, and refuses to write into a branch other than the repository default without asking
+
 ## release-tools v2.0.8 - 2026-08-21
 
 ### Other
