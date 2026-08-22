@@ -16,12 +16,15 @@ failed=0
 WORK_DIR="$(mktemp -d)"
 USER_DIR="$(mktemp -d)"
 
-# safety: verify dirs are under /tmp or $TMPDIR before allowing any rm operations
+# safety: verify dirs live under the directory mktemp actually uses before any rm.
+# the base comes from mktemp itself, not $TMPDIR -- BSD mktemp on macOS ignores
+# TMPDIR for the default template and always uses _CS_DARWIN_USER_TEMP_DIR
+# (/var/folders/.../T), so comparing against $TMPDIR aborts the suite on every
+# macOS host. both dirs below come from a bare `mktemp -d`, so they share this base
+TMP_BASE="$(dirname "$(mktemp -u)")"
 assert_temp_dir() {
     local dir="$1"
-    local tmpbase="${TMPDIR:-/tmp}"
-    tmpbase="${tmpbase%/}"
-    case "$dir" in "$tmpbase"/*) ;; *) echo "FATAL: $dir is not under $tmpbase, refusing to proceed" >&2; exit 1;; esac
+    case "$dir" in "$TMP_BASE"/?*) ;; *) echo "FATAL: $dir is not under $TMP_BASE, refusing to proceed" >&2; exit 1;; esac
 }
 assert_temp_dir "$WORK_DIR"
 assert_temp_dir "$USER_DIR"
