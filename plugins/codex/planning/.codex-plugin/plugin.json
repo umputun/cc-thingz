@@ -1,0 +1,28 @@
+{
+  "name": "planning",
+  "version": "3.10.0",
+  "description": "Structured implementation planning, interactive annotation review, plan review, and autonomous plan execution.",
+  "author": {
+    "name": "Umputun",
+    "url": "https://github.com/umputun"
+  },
+  "homepage": "https://github.com/umputun/cc-thingz",
+  "repository": "https://github.com/umputun/cc-thingz",
+  "license": "MIT",
+  "keywords": ["planning", "implementation", "review", "automation"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Planning",
+    "shortDescription": "Create, review, and execute implementation plans",
+    "longDescription": "Create structured implementation plans, review them against project conventions, annotate them interactively, and execute approved plans with staged reviews.",
+    "developerName": "Umputun",
+    "category": "Engineering",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://github.com/umputun/cc-thingz",
+    "defaultPrompt": [
+      "Create an implementation plan",
+      "Review this implementation plan",
+      "Execute the approved plan"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 # Changelog
 
-This repo ships independent Claude Code plugins. Version headings use values from `plugins/<name>/.claude-plugin/plugin.json`; they are not git tags.
+This repo ships independent Claude Code plugins with paired Codex packages. Version headings use the shared values from `plugins/<name>/.claude-plugin/plugin.json` and `plugins/codex/<name>/.codex-plugin/plugin.json`; they are not git tags.
 
 Entries are sorted by plugin version date, newest first.
 

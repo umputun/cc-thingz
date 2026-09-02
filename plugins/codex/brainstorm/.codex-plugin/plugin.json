@@ -1,0 +1,28 @@
+{
+  "name": "brainstorm",
+  "version": "2.2.2",
+  "description": "Collaborative design dialogue from an initial idea through approaches, design, and implementation planning.",
+  "author": {
+    "name": "Umputun",
+    "url": "https://github.com/umputun"
+  },
+  "homepage": "https://github.com/umputun/cc-thingz",
+  "repository": "https://github.com/umputun/cc-thingz",
+  "license": "MIT",
+  "keywords": ["brainstorm", "design", "architecture", "planning"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Brainstorm",
+    "shortDescription": "Turn ideas into validated designs",
+    "longDescription": "Explore an idea collaboratively, compare implementation approaches, validate the design in stages, and choose the next implementation step.",
+    "developerName": "Umputun",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://github.com/umputun/cc-thingz",
+    "defaultPrompt": [
+      "Help me design this feature",
+      "Explore approaches for this change",
+      "Stress-test this architecture idea"
+    ]
+  }
+}

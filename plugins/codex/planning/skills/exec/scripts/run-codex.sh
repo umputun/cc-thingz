@@ -1,0 +1,46 @@
+#!/bin/bash
+# run codex review and return output
+# usage: run-codex.sh "<prompt>"
+# outputs codex response to stdout
+# VCS-aware: in hg repos, adds --skip-git-repo-check so codex doesn't refuse
+
+set -e
+
+prompt="$1"
+if [ -z "$prompt" ]; then
+    echo "error: usage: run-codex.sh '<prompt>'" >&2
+    exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# detect-vcs.sh exits non-zero on non-VCS dirs; set -e propagates so the
+# script aborts before reaching codex with an unknown VCS value
+vcs=$(bash "$SCRIPT_DIR/detect-vcs.sh")
+
+# build args as an array so the hg-specific flag can be positioned right after
+# 'exec' (before --sandbox) as an exec-level option
+args=("exec")
+[ "$vcs" = "hg" ] && args+=("--skip-git-repo-check")
+args+=("--sandbox" "read-only")
+
+# -c overrides switch provider routing in a way some corporate codex
+# proxies / wrappers reject (e.g. "Error: Model provider 'responses' not
+# found"). Set CODEX_NO_OVERRIDES=1 to skip the overrides and fall
+# through to the proxy's defaults. Only the literal value `1` activates
+# suppression -- any other value (including `0`, `false`, empty) keeps
+# the overrides on, matching the documented "set to 1 to enable" semantic.
+if [ "${CODEX_NO_OVERRIDES:-}" != 1 ]; then
+    args+=(
+        "-c" "model_reasoning_effort=xhigh"
+        "-c" "stream_idle_timeout_ms=3600000"
+    )
+    [ -n "${CODEX_MODEL:-}" ] && args+=("-c" "model=$CODEX_MODEL")
+fi
+
+# stdin redirected from /dev/null: codex exec reads stdin to append a
+# <stdin> block even when a prompt arg is given, so an inherited open pipe
+# (e.g. background launch) would block read_to_end forever. /dev/null gives
+# immediate EOF; empty stdin is ignored when a prompt arg is present.
+# exec so a kill on the background task reaches codex itself rather than this
+# wrapper shell, which run-external-review.sh's own exec chain relies on
+exec codex "${args[@]}" "$prompt" < /dev/null

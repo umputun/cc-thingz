@@ -1,10 +1,12 @@
 # cc-thingz
 
-Things to make [Claude Code](https://claude.ai/code) even better — hooks, skills, and commands, organized as a marketplace of independent plugins.
+Things to make [Claude Code](https://claude.ai/code) and [OpenAI Codex](https://developers.openai.com/codex/) even better — hooks, skills, and commands, organized as a marketplace of independent plugins.
 
 This is an unapologetically opinionated set. Every skill here is something I actually use — some multiple times a day (brainstorm, plan, review), others less often but worth having in the toolbox. There are plenty of plugin collections out there, from random grab-bags to well-organized catalogs. This one is mine, and it reflects how I work. Even if you don't need my particular toolbox, it might give you ideas for building your own and making Claude Code do what you want it to do.
 
 ## Install
+
+### Claude Code
 
 Add the marketplace, then install the plugins you want:
 
@@ -21,6 +23,29 @@ Add the marketplace, then install the plugins you want:
 Test a plugin locally:
 
     claude --plugin-dir plugins/brainstorm
+
+### OpenAI Codex
+
+Add the marketplace, then install the same plugin set:
+
+    codex plugin marketplace add umputun/cc-thingz
+
+    codex plugin add brainstorm@umputun-cc-thingz
+    codex plugin add review@umputun-cc-thingz
+    codex plugin add planning@umputun-cc-thingz
+    codex plugin add release-tools@umputun-cc-thingz
+    codex plugin add thinking-tools@umputun-cc-thingz
+    codex plugin add skill-eval@umputun-cc-thingz
+    codex plugin add workflow@umputun-cc-thingz
+
+Start a new Codex session after installation so the new skills are discovered. To test this checkout
+locally, replace `umputun/cc-thingz` in the marketplace command with the repository path. The
+`skill-eval` package also installs a command hook; review and trust it through `/hooks` before use.
+
+Codex packages live under [`plugins/codex/`](plugins/codex/README.md). Commands and reusable agents are
+exposed as skills. Claude `prompt` and `agent` hook handlers have explicit skill equivalents because
+Codex skips those handler types. Codex does run trusted command hooks, so `skill-eval` preserves its
+`UserPromptSubmit` behaviour with an adapted command hook.
 
 <details>
 <summary>Manual install (alternative)</summary>
@@ -136,6 +161,10 @@ The `/plugin` menu has two update paths, and they behave differently:
 
 To keep plugins current automatically, enable `/plugin` → **Marketplaces** → **Enable auto-update**. This updates the marketplace catalog on each session start.
 
+For Codex, refresh the Git marketplace snapshot with:
+
+    codex plugin marketplace upgrade umputun-cc-thingz
+
 ## Plugins
 
 | Plugin | Description |
@@ -147,6 +176,9 @@ To keep plugins current automatically, enable `/plugin` → **Marketplaces** →
 | [thinking-tools](#thinking-tools) | Analytical thinking — dialectic analysis, root cause investigation, codex consultation |
 | [skill-eval](#skill-eval) | Forces skill evaluation before every response |
 | [workflow](#workflow) | Session helpers and deferred-work backlog — knowledge capture, confusion handling, clipboard copy, backlog items |
+
+In Codex, use natural-language intent matching or name the plugin-qualified skill, such as
+`planning:make`, `planning:exec`, `review:pr`, or `workflow:backlog`.
 
 ### brainstorm
 

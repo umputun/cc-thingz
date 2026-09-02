@@ -1,0 +1,37 @@
+{
+  "name": "release-tools",
+  "version": "2.0.8",
+  "description": "Create releases, calculate versions, generate release notes, and inspect changes since the last tag.",
+  "author": {
+    "name": "Umputun",
+    "url": "https://github.com/umputun"
+  },
+  "homepage": "https://github.com/umputun/cc-thingz",
+  "repository": "https://github.com/umputun/cc-thingz",
+  "license": "MIT",
+  "keywords": [
+    "release",
+    "versioning",
+    "release-notes",
+    "changelog"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Release Tools",
+    "shortDescription": "Create releases and inspect unreleased changes",
+    "longDescription": "Calculate semantic versions, generate release notes, update changelogs, publish releases, and show commits since the latest tag.",
+    "developerName": "Umputun",
+    "category": "Engineering",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/umputun/cc-thingz",
+    "defaultPrompt": [
+      "Show commits since the last tag",
+      "Prepare a new release",
+      "Create release notes for the next version"
+    ]
+  }
+}

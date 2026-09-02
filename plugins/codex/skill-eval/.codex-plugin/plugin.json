@@ -1,0 +1,24 @@
+{
+  "name": "skill-eval",
+  "version": "1.0.0",
+  "description": "Evaluate available skills before responding and activate every skill relevant to the request.",
+  "author": {
+    "name": "Umputun",
+    "url": "https://github.com/umputun"
+  },
+  "homepage": "https://github.com/umputun/cc-thingz",
+  "repository": "https://github.com/umputun/cc-thingz",
+  "license": "MIT",
+  "keywords": ["skills", "workflow", "routing"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Skill Evaluation",
+    "shortDescription": "Check relevant skills before each response",
+    "longDescription": "Adds a UserPromptSubmit command hook and matching skill instruction that check the available skill catalogue and activate all capabilities relevant to the current request.",
+    "developerName": "Umputun",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read"],
+    "websiteURL": "https://github.com/umputun/cc-thingz",
+    "defaultPrompt": ["Evaluate the available skills for this request"]
+  }
+}

@@ -18,13 +18,14 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
 
 - Hook scripts use `${CLAUDE_PLUGIN_ROOT}` for path resolution when running as a plugin. The plugin system copies files to a cache location during install, so absolute/relative paths won't work.
 - Manual install instructions are kept in README.md as a fallback for users who prefer direct setup.
-- **Versioning** — each plugin has its own `version` in `plugins/<name>/.claude-plugin/plugin.json`. Bump independently per plugin. Use semver: patch for bug fixes, minor for new components, major for breaking changes. **Bump triggers on any change to bundled plugin content** — prompts, agents, references (e.g., `usage.md`), scripts, commands, hooks — not just `.claude-plugin/` files. Anything shipped to consumers via the plugin is a release artifact.
+- **Versioning** — each plugin has its own `version` in `plugins/<name>/.claude-plugin/plugin.json` and `plugins/codex/<name>/.codex-plugin/plugin.json`; keep the two manifests synchronized and bump independently per plugin. Use semver: patch for bug fixes, minor for new components, major for breaking changes. **Bump triggers on any change to bundled plugin content** — prompts, agents, references (e.g., `usage.md`), scripts, commands, hooks — not just `.claude-plugin/` files. Anything shipped to consumers via the plugin is a release artifact.
 - **Changelog**: when bumping a plugin version, update `CHANGELOG.md` in the same change. Version headings use the plugin name and plugin version (e.g., `## planning v3.7.1 - YYYY-MM-DD`), not tags. Keep entries grouped like the changelog style: New Features, Improvements, Bug Fixes, Other.
 - **Cross-references** — when skills reference other skills within the same plugin, use the plugin name prefix (e.g., `/review:writing-style`). When referencing skills in other plugins, use that plugin's name (e.g., `/planning:make`).
 
 ## Structure
 
 - `.claude-plugin/marketplace.json` — marketplace catalog listing all plugins
+- `.agents/plugins/marketplace.json` — Codex marketplace catalog listing all plugins
 - `plugins/` — each subdirectory is an independent plugin:
   - `plugins/brainstorm/` — collaborative design skill
   - `plugins/review/` — PR review skill + writing style skill
@@ -33,6 +34,7 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
   - `plugins/thinking-tools/` — dialectic analysis + root-cause-investigator skills
   - `plugins/skill-eval/` — skill evaluation hook
   - `plugins/workflow/` — session workflow helpers (learn, clarify, wrong, md-copy, txt-copy)
+- `plugins/codex/` — Codex-specific manifests and adapted skill packages for every plugin
 - Each plugin has its own `.claude-plugin/plugin.json`, and standard subdirectories (`skills/`, `commands/`, `hooks/`) as needed.
 
 ## Local Plugin Development
@@ -50,6 +52,7 @@ Things to make Claude Code even better — hooks, skills, and commands, organize
 - Python scripts include embedded tests run via `--test` flag: `python3 plugins/planning/scripts/plan-annotate.py --test`
 - Shell test scripts live in `tests/`: `bash tests/test-planning-resolve-rules.sh`, `bash tests/test-brainstorm-resolve-rules.sh`. CI runs every `tests/test-*.sh`, so a new file there is picked up automatically
 - CI helper scripts live in `.github/scripts/`. `check-frontmatter.py` validates YAML frontmatter across the repo (`python3 .github/scripts/check-frontmatter.py .`) and carries its own tests (`--test`)
+- Codex manifests are validated with the Codex plugin validator, and each Codex skill is checked with the Codex skill validator
 
 ## Plugin Design Constraints
 

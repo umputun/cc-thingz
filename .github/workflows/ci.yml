@@ -30,7 +30,9 @@ jobs:
           # Regex anchors on start-of-line with optional non-# prefix so
           # explanatory comments (e.g. "# don't use hg branch here") do not
           # trip the lint.
-          if grep -nE '^[^#]*\bhg[[:space:]]+branch(es)?\b' plugins/planning/skills/exec/scripts/*.sh; then
+          if grep -nE '^[^#]*\bhg[[:space:]]+branch(es)?\b' \
+              plugins/planning/skills/exec/scripts/*.sh \
+              plugins/codex/planning/skills/exec/scripts/*.sh; then
               echo "ERROR: legacy branch/branches subcommand found in exec scripts -- use bookmark patterns for portability" >&2
               exit 1
           fi
@@ -41,12 +43,18 @@ jobs:
               (sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends mercurial)
           hg --version
 
+      - name: Validate Codex packages
+        run: bash tests/test-codex-packages.sh
+
       - name: Run shell tests
         run: |
-          for t in tests/test-*.sh; do bash "$t"; done
+          for t in tests/test-*.sh; do
+            [ "$t" = tests/test-codex-packages.sh ] || bash "$t"
+          done
 
       - name: Run python tests
         run: |
           python3 plugins/planning/scripts/plan-annotate.py --test
+          python3 plugins/codex/planning/scripts/plan-annotate.py --test
           python3 plugins/review/skills/git-review/scripts/git-review.py --test
           python3 .github/scripts/check-frontmatter.py --test

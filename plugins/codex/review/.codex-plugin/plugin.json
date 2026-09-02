@@ -1,0 +1,28 @@
+{
+  "name": "review",
+  "version": "2.2.4",
+  "description": "Pull request review, interactive git diff annotation, and concise writing guidance.",
+  "author": {
+    "name": "Umputun",
+    "url": "https://github.com/umputun"
+  },
+  "homepage": "https://github.com/umputun/cc-thingz",
+  "repository": "https://github.com/umputun/cc-thingz",
+  "license": "MIT",
+  "keywords": ["review", "pull-request", "git", "writing"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Review",
+    "shortDescription": "Review pull requests, diffs, and technical writing",
+    "longDescription": "Review pull requests and issues, annotate git diffs interactively, and apply concise writing conventions to technical communication.",
+    "developerName": "Umputun",
+    "category": "Engineering",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://github.com/umputun/cc-thingz",
+    "defaultPrompt": [
+      "Review this pull request",
+      "Open an interactive git review",
+      "Tighten this technical draft"
+    ]
+  }
+}
