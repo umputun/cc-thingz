@@ -4,6 +4,13 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.10.1 - 2026-09-06
+
+### Bug Fixes
+
+- External review keeps the complete branch diff on every iteration, so committed fixer changes remain visible to subsequent reviews.
+- Completion collects timestamped decision and deviation entries from the progress file.
+
 ## workflow v1.3.0 - 2026-08-23
 
 ### New Features

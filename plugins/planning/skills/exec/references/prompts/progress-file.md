@@ -46,7 +46,7 @@ Started: <timestamp>
 [decision] task N: <what was decided> — <why: lint rule / plan intent / convention>
 [deviation] task N: <how the result differs from the plan> — <why>
 ```
-The orchestrator greps these markers at completion and reports them to the user (see the exec SKILL completion step), so the user learns every question the run answered on its own and why.
+The orchestrator greps these markers at completion and reports them to the user (see the exec SKILL completion step), so the user learns every question the run answered on its own and why. `append-progress.sh` prefixes entries with a timestamp, so the completion collector matches the markers anywhere on the line.
 
 **At completion:**
 ```
