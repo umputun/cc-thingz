@@ -2,8 +2,7 @@
 
 This is the prompt sent to the external review tool. Replace `DIFF_COMMAND`, `PLAN_FILE_PATH`, and `PROGRESS_FILE_PATH` before passing.
 
-- Iteration 1: `DIFF_COMMAND` = `git diff DEFAULT_BRANCH...HEAD`
-- Subsequent: `DIFF_COMMAND` = `git diff`
+Every iteration uses `DIFF_COMMAND` = `git diff DEFAULT_BRANCH...HEAD` because fixers commit their changes before the next review.
 
 Step 9 of the exec skill is authoritative for how the script's exit codes are handled — do not restate the rules here. In particular a `127` is a skip only when the script's own stderr marker is present.
 
