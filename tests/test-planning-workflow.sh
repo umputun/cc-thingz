@@ -21,6 +21,29 @@ SKILL = (EXEC / "SKILL.md").read_text()
 
 
 class ExecWorkflowTests(unittest.TestCase):
+    def test_each_fixer_reports_uncommitted_paths(self):
+        for step in (7, 8, 9):
+            with self.subTest(step=step):
+                section = SKILL.split(f"### Step {step}.", 1)[1].split("\n### Step ", 1)[0]
+                spawn = section.index("**Spawn a fixer agent**")
+                after = re.search(
+                    r"^\d+\. \*\*(?:After fixer returns|Report fixer results to user)\*\*[^\n]*",
+                    section, re.MULTILINE,
+                )
+                self.assertIsNotNone(after, "No post-fixer step found")
+                self.assertGreater(after.start(), spawn)
+                instruction = after.group()
+                for expected in (
+                    "vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)",
+                    "`git status --porcelain` for `git`",
+                    "`hg status` for `hg`",
+                    "If output is non-empty",
+                    "every reported path",
+                    "uncommitted changes are absent from the committed branch diff",
+                    "report-only: do not retry, abort, or commit leftovers",
+                ):
+                    self.assertIn(expected, instruction)
+
     def test_external_review_includes_committed_fixes(self):
         with tempfile.TemporaryDirectory() as work:
             env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM="1")

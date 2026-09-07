@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.10.2 - 2026-09-07
+
+### Bug Fixes
+
+- Review phases report uncommitted paths left after a fixer returns, so users can see which edits are missing from the next review's committed branch diff.
+
 ## planning v3.10.1 - 2026-09-06
 
 ### Bug Fixes
