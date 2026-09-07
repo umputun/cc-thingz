@@ -64,7 +64,11 @@ class ExecWorkflowTests(unittest.TestCase):
             for marker in ("decision", "deviation"):
                 subprocess.run([*append, f"[{marker}] task 1: timestamped"], check=True)
             subprocess.run(
-                append, input="[decision] task 2: plain\n[deviation] task 2: plain\n",
+                append,
+                input=(
+                    "[decision] task 2: plain\n[deviation] task 2: plain\n"
+                    "Review finding: quoted [decision] and [deviation] markers.\n"
+                ),
                 text=True, check=True,
             )
             expression = re.search(r"grep -E '([^']*decision[^']*)'", SKILL)
@@ -74,7 +78,16 @@ class ExecWorkflowTests(unittest.TestCase):
                 capture_output=True, text=True,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(result.stdout.splitlines(), progress.read_text().splitlines()[1:])
+            entries = [
+                re.sub(r"^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] ", "", line)
+                for line in result.stdout.splitlines()
+            ]
+            self.assertEqual(entries, [
+                "[decision] task 1: timestamped",
+                "[deviation] task 1: timestamped",
+                "[decision] task 2: plain",
+                "[deviation] task 2: plain",
+            ])
 
 
 unittest.main(verbosity=2)
