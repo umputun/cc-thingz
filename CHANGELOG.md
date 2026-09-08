@@ -4,6 +4,13 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## workflow v1.3.2 - 2026-09-08
+
+### Bug Fixes
+
+- learn: the skill description said it defers to project-defined memory-placement guidance while step 1 also reads the user's `~/.claude/CLAUDE.md` and `~/.claude/rules/*.md`. The description is what the skill is matched on, so it now says project- or user-defined
+- learn: `allowed-tools` declares `Glob`, which step 1 needs to enumerate the two rules directories it scans
+
 ## workflow v1.3.1 - 2026-09-07
 
 ### Bug Fixes

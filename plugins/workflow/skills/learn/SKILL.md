@@ -1,7 +1,7 @@
 ---
 name: learn
-description: Update project CLAUDE.md with strategic knowledge discovered during this session — or CLAUDE.local.md when the discovery is per-developer/per-checkout and that file already exists. Defers to any project-defined memory-placement guidance instead of overriding it. Use when user says "learn", "save knowledge", "update claude.md", "capture learnings", or at end of significant work sessions. Also used by commit skill for pre-commit knowledge capture.
-allowed-tools: Read, Edit, AskUserQuestion
+description: Update project CLAUDE.md with strategic knowledge discovered during this session — or CLAUDE.local.md when the discovery is per-developer/per-checkout and that file already exists. Defers to any project- or user-defined memory-placement guidance instead of overriding it. Use when user says "learn", "save knowledge", "update claude.md", "capture learnings", or at end of significant work sessions. Also used by commit skill for pre-commit knowledge capture.
+allowed-tools: Read, Edit, Glob, AskUserQuestion
 ---
 
 # Learn
