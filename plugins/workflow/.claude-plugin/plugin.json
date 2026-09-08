@@ -1,7 +1,7 @@
 {
   "name": "workflow",
   "description": "Session workflow helpers and deferred-work backlog - knowledge capture, confusion handling, course correction, clipboard copy, backlog items",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "author": {
     "name": "Umputun"
   },
