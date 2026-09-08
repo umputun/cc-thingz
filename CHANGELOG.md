@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## workflow v1.3.1 - 2026-09-07
+
+### Bug Fixes
+
+- learn: step 1 now also scans `~/.claude/rules/*.md` for memory-placement guidance
+
 ## planning v3.10.2 - 2026-09-07
 
 ### Bug Fixes

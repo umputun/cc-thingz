@@ -86,7 +86,7 @@ Ask yourself for each discovery:
 ## Workflow
 
 ### 1. Check for Existing Memory-Placement Guidance
-Before applying the routing rules below, scan the project's root `CLAUDE.md`, any `.claude/rules/*.md` files, and the user's global `~/.claude/CLAUDE.md` for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `CLAUDE.md` / `CLAUDE.local.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
+Before applying the routing rules below, scan the project's root `CLAUDE.md`, any `.claude/rules/*.md` files, the user's global `~/.claude/CLAUDE.md`, and any `~/.claude/rules/*.md` files for documented memory-placement guidance — for example, a placement decision tree, an instruction to use a project-specific triage command, or specific destinations beyond `CLAUDE.md` / `CLAUDE.local.md`. If such guidance exists, defer to it: follow the documented workflow or place each discovery according to its rules instead of using this skill's defaults. The remaining steps apply only when no such guidance is found.
 
 ### 2. Check Existing Memory Content
 Read the current content of project `CLAUDE.md`, `CLAUDE.local.md` (if present), and the user's global `~/.claude/CLAUDE.md` to avoid duplication — including cross-project entries already captured in user memory.
