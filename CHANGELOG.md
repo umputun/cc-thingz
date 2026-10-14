@@ -4,6 +4,21 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.10.4 - 2026-10-12
+
+### Bug Fixes
+
+- Plan review and editor fallback: route agterm overlays to the owning socket/session/window and resolve stable pane IDs after swaps; reject unknown/hidden panes and require an explicit floating override from scratch
+- Require invocation-specific completion evidence instead of accepting a reused overlay slot's exit status; preserve review errors and revdiff annotation exit 10
+- Set blocked status only in the launched child, restore the same owner on normal exit and HUP/INT/TERM, and leave sibling status untouched when opening refuses
+
+## review v2.2.5 - 2026-10-12
+
+### Bug Fixes
+
+- Git-review editor: apply the same owning-session/pane routing, explicit floating geometry and per-invocation completion checks; failed or cancelled editor overlays no longer become clean reviews
+- Preserve pane ownership through status cleanup and leave occupied slots alone
+
 ## planning v3.10.3 - 2026-10-05
 
 ### Improvements

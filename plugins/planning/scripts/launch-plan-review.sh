@@ -52,34 +52,102 @@ OVERLAY_TITLE="plan: $(basename "$PLAN_FILE")"
 POPUP_W="${REVDIFF_POPUP_WIDTH:-90%}"
 POPUP_H="${REVDIFF_POPUP_HEIGHT:-90%}"
 
-# agterm: `agtermctl session overlay open <cmd> --block` opens revdiff in a full-pane
-# overlay over the agent's own session and blocks until it exits — like tmux's
-# display-popup -E, so no sentinel is needed. checked first so an agterm session always
-# uses its native overlay even when a multiplexer is also present. needs $AGTERM_SESSION_ID
-# (set in every agterm session) and agtermctl on PATH; passes $AGTERM_SOCKET so it reaches
-# the agterm instance hosting this session, and --cwd "$CWD" so the overlay runs in the
-# launcher's directory. sets the session status indicator to blocked while the overlay is
-# up and restores active on every exit path.
-if [ -n "${AGTERM_SESSION_ID:-}" ] && command -v agtermctl >/dev/null 2>&1; then
+# Native agterm wins over inherited multiplexer/Kitty hints. Never target active.
+if [ "${AGTERM_ENABLED:-}" = 1 ] || [ -n "${AGTERM_SESSION_ID:-}" ]; then
+    AGTERMCTL=${AGTERMCTL:-}
+    if [ -z "$AGTERMCTL" ]; then
+        if [ -n "${GHOSTTY_BIN_DIR:-}" ] && [ -x "$GHOSTTY_BIN_DIR/agtermctl" ]; then
+            AGTERMCTL="$GHOSTTY_BIN_DIR/agtermctl"
+        else
+            AGTERMCTL=$(command -v agtermctl 2>/dev/null || true)
+        fi
+    fi
+    if [ -z "${AGTERM_SESSION_ID:-}" ] || [ -z "$AGTERMCTL" ]; then
+        echo "error: agterm review requires AGTERM_SESSION_ID and agtermctl" >&2
+        exit 1
+    fi
     AGTERM_TARGET=(--target "$AGTERM_SESSION_ID")
-    [ -n "${AGTERM_SOCKET:-}" ] && AGTERM_TARGET+=(--socket "$AGTERM_SOCKET")
-    # scope status and overlay to the active pane so the sibling pane stays live in a split session.
-    # session status accepts left|right|scratch; overlay open only accepts left|right (a scratch
-    # pane falls back to full-session overlay).
-    AGTERM_STATUS=(session status blocked --blink "${AGTERM_TARGET[@]}")
-    AGTERM_OVERLAY=(session overlay open "$REVDIFF_CMD" "${AGTERM_TARGET[@]}")
-    [ -n "${AGTERM_PANE:-}" ] && AGTERM_STATUS+=(--pane "$AGTERM_PANE")
-    case "${AGTERM_PANE:-}" in
-        left|right) AGTERM_OVERLAY+=(--pane "$AGTERM_PANE") ;;
+    [ -z "${AGTERM_SOCKET:-}" ] || AGTERM_TARGET+=(--socket "$AGTERM_SOCKET")
+    [ -z "${AGTERM_WINDOW_ID:-}" ] || AGTERM_TARGET+=(--window "$AGTERM_WINDOW_ID")
+    AGTERM_STATUS_PANE=()
+    pane=${AGTERM_PANE:-}
+    if [ -n "${AGTERM_PANE_ID:-}${pane}" ]; then
+        command -v jq >/dev/null 2>&1 || { echo "error: jq required for stable agterm pane targeting" >&2; exit 1; }
+        tree_args=(tree --json)
+        [ -z "${AGTERM_SOCKET:-}" ] || tree_args+=(--socket "$AGTERM_SOCKET")
+        [ -z "${AGTERM_WINDOW_ID:-}" ] || tree_args+=(--window "$AGTERM_WINDOW_ID")
+        tree=$("$AGTERMCTL" "${tree_args[@]}")
+        pane=$(printf '%s' "$tree" | jq -er --arg s "$AGTERM_SESSION_ID" --arg p "${AGTERM_PANE_ID:-}" --arg fallback "$pane" '
+            [.result.tree.workspaces[].sessions[] | select((.id | ascii_downcase) == ($s | ascii_downcase))] |
+            if length != 1 then error("owning session not found") else .[0].surfaces end |
+            if any(.[]; has("paneID")) then
+                if $p == "" then error("stable owning pane id required") else . end |
+                [.[] | select(.paneID == $p)] |
+                if length != 1 then error("unknown pane id")
+                elif .[0].visible != true then error("owning pane not visible")
+                else .[0].kind end
+            elif $fallback == "left" or $fallback == "right" or $fallback == "scratch" then
+                [.[] | select(.kind == $fallback)] |
+                if length != 1 then error("legacy owning pane not found")
+                elif .[0].visible != true then error("legacy owning pane not visible")
+                else .[0].kind end
+            else error("pane identity unavailable") end') || { echo "error: cannot resolve owning agterm pane" >&2; exit 1; }
+        if printf '%s' "$tree" | jq -e --arg s "$AGTERM_SESSION_ID" '
+            .result.tree.workspaces[].sessions[] | select((.id | ascii_downcase) == ($s | ascii_downcase)) |
+            any(.surfaces[]; has("paneID"))' >/dev/null &&
+            "$AGTERMCTL" session status --help 2>/dev/null | grep -q -- '--pane-id'; then
+            AGTERM_STATUS_PANE=(--pane-id "$AGTERM_PANE_ID")
+        else
+            AGTERM_STATUS_PANE=(--pane "$pane")
+        fi
+    elif [ -n "$pane" ]; then
+        AGTERM_STATUS_PANE=(--pane "$pane")
+    fi
+    AGTERM_GEOMETRY=()
+    if [ -n "${REVDIFF_OVERLAY_SIZE:-}" ]; then
+        AGTERM_GEOMETRY=(--size-percent "$REVDIFF_OVERLAY_SIZE")
+    else
+        case "$pane" in
+            left|right) AGTERM_GEOMETRY=(--pane "$pane") ;;
+            scratch) echo "error: scratch reviews require explicit REVDIFF_OVERLAY_SIZE" >&2; exit 1 ;;
+            '') AGTERM_GEOMETRY=(--size-percent 90) ;;
+            *) echo "error: unsupported agterm pane: $pane" >&2; exit 1 ;;
+        esac
+    fi
+    DONE_FILE=$(mktemp "$TMPBASE/plan-review-done-XXXXXX")
+    rm -f "$DONE_FILE"
+    trap 'rm -f "$OUTPUT_FILE" "$DONE_FILE"' EXIT
+    status_blocked=$(printf '%q ' "$AGTERMCTL" session status blocked --blink "${AGTERM_TARGET[@]}" ${AGTERM_STATUS_PANE[@]+"${AGTERM_STATUS_PANE[@]}"})
+    status_active=$(printf '%q ' "$AGTERMCTL" session status active "${AGTERM_TARGET[@]}" ${AGTERM_STATUS_PANE[@]+"${AGTERM_STATUS_PANE[@]}"})
+    # Status belongs to the launched child, never a refused/occupied slot.
+    AGTERM_CHILD="status_set=0
+cleanup_status() { if [ \"\$status_set\" = 1 ]; then $status_active >/dev/null 2>&1 || true; fi; }
+trap cleanup_status EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+if $status_blocked >/dev/null 2>&1; then status_set=1; fi
+$REVDIFF_CMD
+status=\$?
+printf '%s\\n' \"\$status\" > $(sq "$DONE_FILE")
+exit \"\$status\""
+    AGTERM_COMMAND=$(printf '%q ' bash -c "$AGTERM_CHILD")
+    ctl_status=0
+    # Role-based targeting has a residual swap race. Never retry or close a slot.
+    "$AGTERMCTL" session overlay open "$AGTERM_COMMAND" "${AGTERM_TARGET[@]}" \
+        "${AGTERM_GEOMETRY[@]}" --cwd "$CWD" --block >/dev/null || ctl_status=$?
+    if [ ! -s "$DONE_FILE" ]; then
+        echo "error: plan review did not complete (overlay failed, closed, or was replaced)" >&2
+        [ "$ctl_status" -ne 0 ] && exit "$ctl_status"
+        exit 1
+    fi
+    status=$(cat "$DONE_FILE")
+    case "$status" in
+        ''|*[!0-9]*) echo "error: invalid review completion status" >&2; exit 1 ;;
     esac
-    AGTERM_OVERLAY+=(--cwd "$CWD" --block)
-    agtermctl "${AGTERM_STATUS[@]}" >/dev/null 2>&1 || true
-    trap 'agtermctl session status active "${AGTERM_TARGET[@]}" >/dev/null 2>&1 || true; rm -f "$OUTPUT_FILE"' EXIT
-    trap 'exit 130' INT
-    trap 'exit 143' TERM
-    agtermctl "${AGTERM_OVERLAY[@]}" >/dev/null || true
     cat "$OUTPUT_FILE"
-    exit 0
+    [ "$status" = 0 ] || [ "$status" = 10 ] && exit 0
+    exit "$status"
 fi
 
 # tmux: display-popup -E blocks until command exits

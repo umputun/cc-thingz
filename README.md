@@ -186,6 +186,8 @@ Uses `gh` CLI for all GitHub operations and git worktrees to avoid disrupting th
 
 **git-review** — interactive annotation-based code review. Generates a cleaned-up diff, opens it in `$EDITOR` via agterm overlay, tmux popup, kitty overlay, or wezterm split-pane (agterm tried first). You annotate directly in the diff, and the script returns your changes as a git diff. Claude reads annotations, fixes code, regenerates the diff, and loops until you close the editor without changes. Supports auto-detection of uncommitted changes or branch diffs. **Agterm users**: needs `agtermctl` on PATH (bundled with agterm), no extra config; pane-scoped overlays need agterm 0.20.0+.
 
+Agterm routing and completion behavior is shared with planning; see [Agterm review overlays](#agterm-review-overlays).
+
 Run tests: `python3 plugins/review/skills/git-review/scripts/git-review.py --test`
 
 **writing-style** — enforces direct, brief writing for tickets, PRs, code reviews, and commit messages. Core principles: brevity, honest feedback, problem-solution structure, technical precision, anti-AI-speak. Does NOT apply to README.md, public docs, or blog posts.
@@ -232,6 +234,20 @@ The overlay popup size is configurable via env vars:
 | `REVDIFF_POPUP_HEIGHT` | Tmux/Zellij popup height / wezterm split percent | `90%` |
 
 Run tests: `python3 plugins/planning/scripts/plan-annotate.py --test`
+
+#### Agterm review overlays
+
+The three review launchers prefer `AGTERMCTL`, then the running app's `$GHOSTTY_BIN_DIR/agtermctl`, then PATH. They require `AGTERM_SESSION_ID` and propagate `AGTERM_SOCKET`/`AGTERM_WINDOW_ID`; they never target the focused session or fall back to an inherited Kitty/tmux backend after an agterm failure.
+
+A supplied `AGTERM_PANE_ID` is resolved through the live tree before opening, so swapped/promoted panes follow their owner. Unknown or hidden panes fail, as does a missing token with a supplied spawn role on a token-capable tree. Only older trees without pane tokens allow a validated visible spawn-role fallback. The shell revdiff launcher needs `jq` for this resolution; Python editors use the standard library.
+
+Left/right owners default to full-pane overlays. Set `REVDIFF_OVERLAY_SIZE=75` for a deliberate session-wide floating overlay (also required from scratch); floating size never combines with `--pane`. Role-based opening has a residual swap race between tree reading and opening because agterm does not accept a stable token there. No retry, focus change, input injection or slot close is attempted; occupied slots are left alone.
+
+Each invocation records its own completion status: `open --block` alone is insufficient because the slot can be reused. Missing completion is failure/cancellation, not an empty successful review. Editor errors remain errors; revdiff exit 10 means annotations and maps to success. In hook mode, failed annotation still goes to the normal approval prompt with an explicit not-reviewed reason.
+
+Blocked status starts only inside the launched child and is restored to active for that same owner on exit, including HUP/INT/TERM. Advisory status failures do not mask review errors. SIGKILL cannot run cleanup.
+
+Run focused stub-only regressions: `bash tests/test-agterm-overlays.sh`. They exercise all three launchers without opening terminals or invoking real editors/review tools.
 
 **plan-review agent** — automated plan quality reviewer. Analyzes plans for problem definition, solution correctness, scope creep, over-engineering, testing requirements, task granularity, and convention adherence. Used by the plan command's "Auto review" option. Outputs a structured report with severity-rated findings and an APPROVE/NEEDS REVISION verdict.
 

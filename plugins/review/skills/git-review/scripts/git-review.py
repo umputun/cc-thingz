@@ -28,6 +28,7 @@ requirements:
     - kitty users: kitty.conf must have allow_remote_control and listen_on configured
 """
 
+import json
 import os
 import re
 import shlex
@@ -274,42 +275,97 @@ def build_editor_cmd(editor: str) -> str:
     return " ".join(shlex.quote(p) for p in parts)
 
 
+def open_agterm_editor(editor_cmd: str, filepath: Path) -> int:
+    """Run only on the owning session; completion belongs to this invocation.
+
+    Overlay open accepts roles, not stable IDs: a swap after the tree read is
+    still a race. Never retry or close a slot that may have been reassigned.
+    """
+    bundled = Path(os.environ.get("GHOSTTY_BIN_DIR", "")) / "agtermctl"
+    ctl = os.environ.get("AGTERMCTL") or (
+        str(bundled) if os.environ.get("GHOSTTY_BIN_DIR") and os.access(bundled, os.X_OK)
+        else shutil.which("agtermctl")
+    )
+    session = os.environ.get("AGTERM_SESSION_ID")
+    if not ctl or not session:
+        print("error: agterm review requires AGTERM_SESSION_ID and agtermctl", file=sys.stderr)
+        return 1
+    route = []
+    for env, flag in (("AGTERM_SOCKET", "--socket"), ("AGTERM_WINDOW_ID", "--window")):
+        if os.environ.get(env):
+            route += [flag, os.environ[env]]
+    target = ["--target", session, *route]
+    pane = os.environ.get("AGTERM_PANE", "")
+    token = os.environ.get("AGTERM_PANE_ID")
+    status_pane = ["--pane", pane] if pane else []
+    try:
+        if token or pane:
+            result = subprocess.run([ctl, "tree", "--json", *route], capture_output=True, text=True)
+            if result.returncode:
+                raise ValueError("cannot read owning pane tree")
+            sessions = [s for w in json.loads(result.stdout)["result"]["tree"]["workspaces"]
+                        for s in w["sessions"] if s["id"].lower() == session.lower()]
+            if len(sessions) != 1:
+                raise ValueError("owning session not found")
+            surfaces = sessions[0]["surfaces"]
+            modern = any("paneID" in s for s in surfaces)
+            if modern and not token:
+                raise ValueError("stable owning pane id required")
+            owners = [s for s in surfaces if (s.get("paneID") == token if modern else s.get("kind") == pane)]
+            if len(owners) != 1 or owners[0].get("visible") is not True:
+                raise ValueError("owning pane unknown or hidden")
+            pane = owners[0]["kind"]
+            help_result = subprocess.run([ctl, "session", "status", "--help"], capture_output=True, text=True)
+            status_pane = (["--pane-id", token] if modern and "--pane-id" in help_result.stdout
+                           else ["--pane", pane])
+        size = os.environ.get("REVDIFF_OVERLAY_SIZE")
+        if pane not in ("", "left", "right", "scratch"):
+            raise ValueError("unsupported owning pane")
+        if pane == "scratch" and not size:
+            raise ValueError("scratch reviews require explicit REVDIFF_OVERLAY_SIZE")
+        geometry = (["--size-percent", size] if size else
+                    ["--pane", pane] if pane else ["--size-percent", "90"])
+        with tempfile.TemporaryDirectory(prefix="agterm-review-") as tmp:
+            done = Path(tmp) / "done"
+            blocked = shlex.join([ctl, "session", "status", "blocked", "--blink", *target, *status_pane])
+            active = shlex.join([ctl, "session", "status", "active", *target, *status_pane])
+            # Status starts in the launched child, never on a refused slot.
+            wrapper = f'''status_set=0
+cleanup_status() {{ if [ "$status_set" = 1 ]; then {active} >/dev/null 2>&1 || true; fi; }}
+trap cleanup_status EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+if {blocked} >/dev/null 2>&1; then status_set=1; fi
+{editor_cmd} {shlex.quote(str(filepath))}
+status=$?
+printf '%s\\n' "$status" > {shlex.quote(str(done))}
+exit "$status"'''
+            result = subprocess.run(
+                [ctl, "session", "overlay", "open", shlex.join(["sh", "-c", wrapper]),
+                 *target, *geometry, "--cwd", str(Path.cwd()), "--block"],
+                stdout=subprocess.DEVNULL,
+            )
+            if not done.exists():
+                print("error: editor review did not complete (overlay failed, closed, or was replaced)", file=sys.stderr)
+                return result.returncode if result.returncode > 0 else 1
+            status = done.read_text().strip()
+            if not status.isdecimal() or not 0 <= int(status) <= 255:
+                raise ValueError("invalid editor completion status")
+            return int(status)
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"error: agterm review failed: {error}", file=sys.stderr)
+        return 1
+
+
 def open_editor(filepath: Path) -> int:
     """open file in $EDITOR via agterm overlay, tmux popup, kitty overlay, or wezterm split-pane,
     blocking until editor closes. tries agterm first (if $AGTERM_SESSION_ID is set), then tmux
     (if $TMUX), then kitty, then wezterm. returns non-zero if none is available."""
     editor_cmd = build_editor_cmd(os.environ.get("EDITOR", "vi"))
 
-    # agterm: overlay open --block runs the editor full-pane and blocks (like tmux's -E), no
-    # sentinel needed. checked first so agterm wins over a stray KITTY_LISTEN_ON. needs
-    # $AGTERM_SESSION_ID + agtermctl; toggles session status blocked→active around the overlay.
-    agterm_session = os.environ.get("AGTERM_SESSION_ID")
-    if agterm_session and shutil.which("agtermctl"):
-        target = ["--target", agterm_session]
-        agterm_socket = os.environ.get("AGTERM_SOCKET")
-        if agterm_socket:
-            target += ["--socket", agterm_socket]
-        # scope status and overlay to the active pane so the sibling stays live in a split session.
-        # session status accepts left|right|scratch; overlay open only accepts left|right
-        agterm_pane = os.environ.get("AGTERM_PANE")
-        status_pane_args = ["--pane", agterm_pane] if agterm_pane else []
-        overlay_pane_args = ["--pane", agterm_pane] if agterm_pane in ("left", "right") else []
-        overlay_cmd = f"{editor_cmd} {shlex.quote(str(filepath))}"
-        subprocess.run(
-            ["agtermctl", "session", "status", "blocked", "--blink", *target, *status_pane_args],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-        try:
-            subprocess.run(
-                ["agtermctl", "session", "overlay", "open", overlay_cmd, *target, *overlay_pane_args, "--block"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
-        finally:
-            subprocess.run(
-                ["agtermctl", "session", "status", "active", *target],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
-        return 0
+    if os.environ.get("AGTERM_SESSION_ID") or os.environ.get("AGTERM_ENABLED") == "1":
+        return open_agterm_editor(editor_cmd, filepath)
 
     # tmux: display-popup -E blocks until the command exits, no sentinel needed
     if os.environ.get("TMUX") and shutil.which("tmux"):
@@ -423,7 +479,7 @@ def run_review(base_ref: str | None = None, branch: str | None = None) -> None:
 
     review_file = review_dir / "review.diff"
     if open_editor(review_file) != 0:
-        print("error: no overlay terminal available (requires agterm, tmux, kitty, or wezterm)", file=sys.stderr)
+        print("error: overlay unavailable or editor review did not complete (requires agterm, tmux, kitty, or wezterm)", file=sys.stderr)
         sys.exit(1)
 
     # get annotations
