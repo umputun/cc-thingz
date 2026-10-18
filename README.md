@@ -348,11 +348,11 @@ Analytical thinking tools for objective analysis.
 
 | Component | Trigger | Description |
 |-----------|---------|-------------|
-| skill | `/thinking-tools:ask-codex` | Consult OpenAI Codex (GPT-5.5) for investigation, debugging, or code review |
+| skill | `/thinking-tools:ask-codex` | Consult OpenAI Codex for investigation, debugging, or code review |
 | skill | `/thinking-tools:dialectic <statement>` | Prove and counter-prove a statement using parallel agents |
 | skill | `/thinking-tools:root-cause-investigator` | Systematic 5-Why root cause analysis for errors and bugs |
 
-**ask-codex** — consults OpenAI Codex (GPT-5.5) as a second opinion for debugging, investigation, or code review. Builds a focused prompt from conversation context, runs codex in read-only sandbox mode in the background, and presents findings with an independent assessment. Requires `codex` CLI to be installed and authenticated.
+**ask-codex** — consults OpenAI Codex as a second opinion for debugging, investigation, or code review. Uses the model from `~/.codex/config.toml`; set `CODEX_MODEL` to override it. Builds a focused prompt from conversation context, runs codex in read-only sandbox mode in the background, and presents findings with an independent assessment. Requires `codex` CLI to be installed and authenticated.
 
 **dialectic** — runs two agents in parallel with opposing goals (thesis vs antithesis) to eliminate confirmation bias. One agent finds all positive evidence, the other finds all negative evidence. After both complete, synthesizes findings into an objective conclusion and verifies cited evidence against actual code.
 

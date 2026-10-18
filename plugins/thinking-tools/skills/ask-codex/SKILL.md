@@ -6,7 +6,7 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # Ask Codex
 
-Consult OpenAI Codex (GPT-5.5) as a second opinion for investigation, debugging, or review tasks.
+Consult OpenAI Codex as a second opinion for investigation, debugging, or review tasks.
 
 ## Activation Triggers
 
@@ -165,7 +165,7 @@ Use "approve" only if you cannot support any substantive finding.
 Run codex in background (it takes 2-5 minutes for complex analysis):
 
 ```bash
-codex exec -m gpt-5.5 \
+codex exec ${CODEX_MODEL:+--model=$CODEX_MODEL} \
   --sandbox read-only \
   -c model_reasoning_effort="xhigh" \
   -c stream_idle_timeout_ms=600000 \
@@ -181,7 +181,7 @@ codex exec -m gpt-5.5 \
 
 **Flags:**
 - `--sandbox read-only` — codex can read all project files but cannot modify anything
-- `-m gpt-5.5` — latest model (adjust as newer versions become available)
+- `${CODEX_MODEL:+--model=$CODEX_MODEL}` — the model comes from the user's `~/.codex/config.toml`; it is overridden only when `CODEX_MODEL` is set. Keep this expansion unquoted so it disappears when the variable is unset
 - `model_reasoning_effort="xhigh"` — deepest reasoning tier
 
 ### Step 5: Present Results

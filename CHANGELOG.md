@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## thinking-tools v1.2.3 - 2026-10-17
+
+### Improvements
+
+- ask-codex: no longer pins `gpt-5.5`. Codex uses the model from the user's `~/.codex/config.toml`, the same as `run-codex.sh` in planning. `CODEX_MODEL` overrides it
+
 ## planning v3.10.3 - 2026-10-05
 
 ### Improvements
