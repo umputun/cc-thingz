@@ -1,7 +1,7 @@
 {
   "name": "planning",
   "description": "Structured implementation planning, interactive annotation review, and autonomous plan execution",
-  "version": "3.10.3",
+  "version": "3.11.0",
   "author": {
     "name": "Umputun"
   },
@@ -12,7 +12,7 @@
     "external_review_cmd": {
       "title": "External review command",
       "type": "string",
-      "description": "Command for external code review tool. The prompt is appended as the final argument; findings go to stdout tagged CRITICAL/MAJOR/MINOR. Leave empty to use codex.",
+      "description": "Command for the external review tool, used for code review in exec and plan review in make. The prompt is appended as the final argument; findings go to stdout tagged CRITICAL/MAJOR/MINOR. Leave empty to use codex.",
       "default": ""
     },
     "task_retries": {

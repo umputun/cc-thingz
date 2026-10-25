@@ -1,6 +1,6 @@
 # Planning Plugin Usage
 
-The planning plugin has three components: make (plan creation), exec (autonomous execution), and plan-review (quality review agent).
+The planning plugin has four components: make (plan creation), exec (autonomous execution), plan-review (quality review agent), and external-plan-review (sends a plan to the external review tool).
 
 ## Make — `/planning:make`
 
@@ -13,7 +13,7 @@ The planning plugin has three components: make (plan creation), exec (autonomous
 2. **Step 1** — asks focused questions one at a time: goal, scope, constraints, testing approach, title
 3. **Step 1.5** — proposes 2-3 implementation approaches with trade-offs (skipped if obvious)
 4. **Step 2** — creates plan file at `docs/plans/yyyymmdd-<task-name>.md`
-5. **Step 3** — offers next steps: interactive review, auto review, implement, or done
+5. **Step 3** — offers next steps: interactive review, auto review (plan-review agent or external reviewer), implement, or done
 
 ### Examples
 ```
@@ -49,7 +49,7 @@ Set via `userConfig` in plugin.json (prompted at install):
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `external_review_cmd` | *(empty — falls back to codex)* | external review tool command; prompt appended as final argv, findings on stdout |
+| `external_review_cmd` | *(empty — falls back to codex)* | external review tool command, for code review in exec and plan review in make; prompt appended as final argv, findings on stdout |
 | `task_retries` | `1` | retries for failed tasks |
 | `review_iterations` | `5` | max fix-and-recheck cycles |
 | `external_review_iterations` | `10` | max external review iterations |
@@ -83,7 +83,7 @@ Subagents in current Claude Code do not have the Agent tool — they cannot spaw
 ## Plan-Review — agent
 
 ### Triggers
-- launched by make's "Auto review" option
+- launched by make's "Auto review" option when the user picks "Plan-review agent"
 - usable as `subagent_type: "plan-review"` in Agent tool calls
 
 ### What It Checks
@@ -99,6 +99,19 @@ Structured report with severity-rated findings:
 - Over-Engineering Concerns
 - Testing Coverage Assessment
 - Verdict: APPROVE or NEEDS REVISION
+
+## External-Plan-Review — agent
+
+### Triggers
+- launched by make's "Auto review" option when the user picks "External reviewer"
+
+### What It Does
+- sends the plan to `external_review_cmd`, or codex when unset, through exec's `run-external-review.sh`
+- the reviewer reads the plan, CLAUDE.md and the code it names, and reports wrong assumptions, missing steps, over-engineering and ordering problems
+- one pass; make shows each finding with Claude's assessment and revises the plan for the ones the user selects
+
+### Output
+A status line (`N findings`, `no issues found`, `skipped`, or `failed`) and the findings verbatim.
 
 ## Interactive Review
 

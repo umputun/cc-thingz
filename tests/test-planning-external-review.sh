@@ -363,6 +363,14 @@ assert_output "SKILL.md single-quotes the config token" "1" "$invocation"
 bad_quote=$(grep -c "run-external-review.sh \"\${user_config" "$skill_md" || true)
 assert_output "SKILL.md does not double-quote the config token" "0" "$bad_quote"
 
+echo "== external-plan-review agent invocation =="
+
+agent_md="$(dirname "$(dirname "$(dirname "$(dirname "$REVIEW_SCRIPT")")")")/agents/external-plan-review.md"
+invocation=$(grep -c "run-external-review.sh '\${user_config.external_review_cmd}'" "$agent_md" || true)
+assert_output "agent single-quotes the config token" "1" "$invocation"
+bad_quote=$(grep -c "run-external-review.sh \"\${user_config" "$agent_md" || true)
+assert_output "agent does not double-quote the config token" "0" "$bad_quote"
+
 echo
 echo "======================================"
 echo "results: $passed passed, $failed failed"

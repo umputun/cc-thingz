@@ -296,7 +296,7 @@ then use AskUserQuestion:
     "header": "Next step",
     "options": [
       {"label": "Interactive review", "description": "Open plan in editor for manual annotation and feedback loop"},
-      {"label": "Auto review", "description": "Launch AI plan-review agent for automated analysis"},
+      {"label": "Auto review", "description": "Automated analysis by the plan-review agent or the external reviewer (codex by default)"},
       {"label": "Implement", "description": "Commit plan and start implementing"},
       {"label": "Done", "description": "Commit plan, no further action"}
     ],
@@ -326,7 +326,27 @@ then use AskUserQuestion:
     3. run `${CLAUDE_PLUGIN_ROOT}/scripts/plan-annotate.py <plan-file-path>` via Bash
     4. repeat until no diff output (user closed editor without changes)
   when the annotation loop completes, ask again with the remaining options (minus "Interactive review")
-- **Auto review**: launch plan-review agent (Task tool with subagent_type=plan-review). After review completes, ask again with the same options (minus "Auto review")
+- **Auto review**: ask which reviewer to use:
+  ```json
+  {
+    "questions": [{
+      "question": "Which reviewer?",
+      "header": "Reviewer",
+      "options": [
+        {"label": "Plan-review agent", "description": "Claude agent checks problem definition, over-engineering, testing and conventions"},
+        {"label": "External reviewer", "description": "Send the plan to the configured external_review_cmd, or codex when unset"}
+      ],
+      "multiSelect": false
+    }]
+  }
+  ```
+  - **Plan-review agent**: launch plan-review agent (Task tool with subagent_type=plan-review).
+  - **External reviewer**: launch the external-plan-review agent (Task tool with subagent_type=external-plan-review), passing the plan file path. It returns a status line and, when there are findings, the reviewer's findings verbatim.
+    - skipped or failed: show the status line to the user.
+    - no issues found: tell the user.
+    - findings: show each finding with your own assessment. The reviewer did not see this conversation, so a finding may already be settled by what the user decided, or be noise. Ask the user which findings to apply with AskUserQuestion, `multiSelect: true`: each question offers at most 3 findings plus a "None of these" option. With more findings, ask several questions in one call, and further calls past 4 questions. Every finding is offered, none dropped to fit. Revise the plan file for the selected findings.
+
+  After review completes, ask again with the same options (minus "Auto review")
 - **Implement**: commit plan with message like "docs: add <topic> implementation plan", then ask implementation mode:
   ```json
   {
