@@ -346,7 +346,7 @@ then use AskUserQuestion:
     - no issues found: tell the user.
     - findings: show each finding with your own assessment. The reviewer did not see this conversation, so a finding may already be settled by what the user decided, or be noise. Ask the user which findings to apply with AskUserQuestion, `multiSelect: true`: each question offers at most 3 findings plus a "None of these" option. With more findings, ask several questions in one call, and further calls past 4 questions. Every finding is offered, none dropped to fit. Revise the plan file for the selected findings.
 
-  After review completes, ask again with the same options (minus "Auto review")
+  After review completes, ask again with the same options (minus "Auto review"). When the external review was skipped or failed, keep "Auto review": no review happened, and the plan-review agent needs no external tool.
 - **Implement**: commit plan with message like "docs: add <topic> implementation plan", then ask implementation mode:
   ```json
   {
