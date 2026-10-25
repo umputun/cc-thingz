@@ -363,6 +363,22 @@ assert_output "SKILL.md single-quotes the config token" "1" "$invocation"
 bad_quote=$(grep -c "run-external-review.sh \"\${user_config" "$skill_md" || true)
 assert_output "SKILL.md does not double-quote the config token" "0" "$bad_quote"
 
+echo "== external-plan-review agent invocation =="
+
+agent_md="$(dirname "$(dirname "$(dirname "$(dirname "$REVIEW_SCRIPT")")")")/agents/external-plan-review.md"
+invocation=$(grep -c "run-external-review.sh '\${user_config.external_review_cmd}'" "$agent_md" || true)
+assert_output "agent single-quotes the config token" "1" "$invocation"
+bad_quote=$(grep -c "run-external-review.sh \"\${user_config" "$agent_md" || true)
+assert_output "agent does not double-quote the config token" "0" "$bad_quote"
+
+echo "== reviewer stderr kept out of the findings scan =="
+
+# regression: codex echoes the prompt, severity words included, on stderr, so a merged scan read clean reviews as findings
+for md in "$skill_md" "$agent_md"; do
+    redirected=$(grep -c "run-external-review.sh '\${user_config.external_review_cmd}' .* 2>/tmp/external-" "$md" || true)
+    assert_output "$(basename "$md") sends reviewer stderr to a file" "1" "$redirected"
+done
+
 echo
 echo "======================================"
 echo "results: $passed passed, $failed failed"

@@ -4,6 +4,16 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.11.0 - 2026-10-25
+
+### New Features
+
+- make: "Auto review" asks which reviewer to use, the plan-review agent or the external reviewer. The external reviewer is a new `external-plan-review` agent that sends the plan to `external_review_cmd`, or codex when unset, through `run-external-review.sh`, so design problems surface before any code exists. One pass: make shows each finding with Claude's assessment, asks which to apply, and revises the plan for those. A reviewer that is missing, fails, times out or prints nothing is reported as such, never as a clean review. Related to https://github.com/umputun/cc-thingz/issues/53
+
+### Bug Fixes
+
+- exec: review phase 3 judges findings on the reviewer's stdout only. Codex echoes the whole prompt on stderr, including the bundled prompt's `CRITICAL`/`MAJOR`/`MINOR` definitions, and the phase scanned stdout and stderr together, so a clean codex review read as blocking findings and kept the loop going. stderr now goes to its own file, which is still read for the not-installed marker and failure messages
+
 ## thinking-tools v1.2.3 - 2026-10-17
 
 ### Improvements

@@ -200,13 +200,14 @@ Structured implementation planning with interactive annotation review and autono
 | skill | `/planning:exec [plan-file]` | Autonomous plan executor — task loop, multi-phase review, optional finalize |
 | hook | `PreToolUse` / CLI | Plan annotation in `$EDITOR` with diff-based feedback loop |
 | agent | `plan-review` | Automated plan quality review — completeness, over-engineering, testing |
+| agent | `external-plan-review` | Sends a plan to the external review tool (codex by default) before implementation |
 
 **plan command** — creates a plan file in `docs/plans/yyyymmdd-<task-name>.md` through interactive context gathering:
 - **Step 0** — parses intent and explores codebase for relevant context
 - **Step 1** — asks focused questions one at a time (goal, scope, constraints, testing approach, title)
 - **Step 1.5** — proposes 2-3 implementation approaches with trade-offs (skipped if obvious)
 - **Step 2** — creates the plan file with tasks, file lists, test requirements, and progress tracking
-- **Step 3** — offers interactive review (opens plan in `$EDITOR` via plan-annotate), auto review, start implementation, or done
+- **Step 3** — offers interactive review (opens plan in `$EDITOR` via plan-annotate), auto review (plan-review agent or external reviewer), start implementation, or done
 
 **plan-annotate.py** — interactive plan annotation tool. Opens plans in your `$EDITOR` via a terminal overlay (agterm overlay, tmux popup, kitty overlay, or wezterm split-pane), lets you annotate directly, and feeds a unified diff back to Claude so it revises the plan. Two modes:
 
@@ -234,6 +235,8 @@ The overlay popup size is configurable via env vars:
 Run tests: `python3 plugins/planning/scripts/plan-annotate.py --test`
 
 **plan-review agent** — automated plan quality reviewer. Analyzes plans for problem definition, solution correctness, scope creep, over-engineering, testing requirements, task granularity, and convention adherence. Used by the plan command's "Auto review" option. Outputs a structured report with severity-rated findings and an APPROVE/NEEDS REVISION verdict.
+
+**external-plan-review agent** — the other choice under "Auto review". Sends the plan to the external review tool through `run-external-review.sh` (the configured `external_review_cmd`, or codex when unset), so design problems surface before any code exists. The reviewer reads the plan, the project's CLAUDE.md, the code the plan names and the custom planning rules, and reports wrong assumptions, missing steps, over-engineering and ordering problems. One pass: the plan command shows each finding with its own assessment, asks which to apply, and revises the plan for those. A reviewer that is not installed, fails, times out (10 minutes) or prints nothing is reported as such, never as a clean review.
 
 **exec skill** — autonomous plan executor. Takes a plan file (from `/planning:make`) and executes it task-by-task using isolated subagents. Execution phases:
 
@@ -298,16 +301,16 @@ Configuration via `userConfig` (prompted at plugin install):
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `external_review_cmd` | *(empty — falls back to codex)* | Command for an external code review tool. See the contract below |
+| `external_review_cmd` | *(empty — falls back to codex)* | Command for the external review tool: code review in exec, plan review in make. See the contract below |
 | `task_retries` | `1` | Retries for failed tasks before stopping |
 | `review_iterations` | `5` | Max fix-and-recheck cycles during internal review |
 | `external_review_iterations` | `10` | Max iterations for external review adversarial loop |
 | `finalize_enabled` | `true` | Whether to run the finalize phase (rebase + squash) |
 | `plans_dir` | `docs/plans` | Directory where plan files are located |
 
-**External review contract** — review phase 3 always runs through `run-external-review.sh`, which receives the `external_review_cmd` value and the resolved prompt. When the setting is empty it falls back to codex via `run-codex.sh`. A custom command must:
+**External review contract** — review phase 3 and the external-plan-review agent both run through `run-external-review.sh`, which receives the `external_review_cmd` value and the resolved prompt. When the setting is empty it falls back to codex via `run-codex.sh`. A custom command must:
 
-- be able to run shell commands and read files in the working tree — the prompt tells the reviewer to run a `git diff`, then read the plan file, the progress file, and source files for context. A plain text-in/text-out LLM CLI satisfies every other bullet here and reviews nothing
+- be able to run shell commands and read files in the working tree — the code review prompt tells the reviewer to run a `git diff`, then read the plan file, the progress file, and source files for context; the plan review prompt tells it to read the plan, CLAUDE.md and the source files the plan names. A plain text-in/text-out LLM CLI satisfies every other bullet here and reviews nothing
 - accept the prompt as its final argument (the command string may carry flags, for example `mytool review --strict`; arguments containing spaces are not supported, so wrap those in a script)
 - write findings to stdout, one per line, tagged `CRITICAL`, `MAJOR`, or `MINOR`, and print `NO ISSUES FOUND` when clean
 - sandbox itself — the reviewer must not modify the working tree, since fixes are applied by a separate fixer agent
