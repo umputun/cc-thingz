@@ -306,6 +306,7 @@ Configuration via `userConfig` (prompted at plugin install):
 | `review_iterations` | `5` | Max fix-and-recheck cycles during internal review |
 | `external_review_iterations` | `10` | Max iterations for external review adversarial loop |
 | `finalize_enabled` | `true` | Whether to run the finalize phase (rebase + squash) |
+| `subagent_model` | *(empty — Claude Code's default subagent model)* | Model for all exec subagents: `opus`, `sonnet`, `haiku` or `fable`. Lets the orchestrator run on a different model than the subagents |
 | `plans_dir` | `docs/plans` | Directory where plan files are located |
 
 **External review contract** — review phase 3 and the external-plan-review agent both run through `run-external-review.sh`, which receives the `external_review_cmd` value and the resolved prompt. When the setting is empty it falls back to codex via `run-codex.sh`. A custom command must:

@@ -25,7 +25,7 @@ The script checks project overrides, user overrides, and bundled defaults automa
 
 After reading a prompt file, replace ALL placeholders with actual values before passing to a subagent. Subagents run in fresh contexts without plugin env vars.
 
-Always substitute: `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `DEFAULT_BRANCH`, `${CLAUDE_PLUGIN_ROOT}` (resolve to actual absolute path), `RESOLVE_SCRIPT` (absolute path to `${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/resolve-file.sh`), `PLUGIN_DATA_DIR` (resolved `${CLAUDE_PLUGIN_DATA}` path — passed as second argument to resolve-file.sh so it can find user overrides), `USER_RULES` (resolved custom rules content from the rules loading step, or empty string if no rules found), and phase-specific values (`FINDINGS_LIST`, `REVIEW_PHASE`, `DIFF_COMMAND`).
+Always substitute: `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `DEFAULT_BRANCH`, `${CLAUDE_PLUGIN_ROOT}` (resolve to actual absolute path), `RESOLVE_SCRIPT` (absolute path to `${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/resolve-file.sh`), `PLUGIN_DATA_DIR` (resolved `${CLAUDE_PLUGIN_DATA}` path — passed as second argument to resolve-file.sh so it can find user overrides), `USER_RULES` (resolved custom rules content from the rules loading step, or empty string if no rules found), `SUBAGENT_MODEL` (in `prompts/review.md`: the resolved value from the Subagent Model section, or empty string), and phase-specific values (`FINDINGS_LIST`, `REVIEW_PHASE`, `DIFF_COMMAND`).
 
 ## Custom Rules Loading
 
@@ -36,6 +36,14 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-rules.sh planning-rules.md ${CLAUDE_P
 ```
 
 If the output is non-empty, store it as the resolved custom rules content. When substituting `USER_RULES` in task prompts, wrap the content with a label so the subagent understands it: use "ADDITIONAL CUSTOM RULES:\n<content>" as the substitution. If the output is empty, substitute an empty string for `USER_RULES`. See `${CLAUDE_PLUGIN_ROOT}/references/custom-rules.md` for full documentation on the rules mechanism.
+
+## Subagent Model
+
+The configured model for exec subagents is `${user_config.subagent_model}`. Claude Code substitutes the value before you read this file. Resolve `SUBAGENT_MODEL` once at the start: take that value, trimmed; if it is empty or still starts with `${user_config.`, the option is not configured and `SUBAGENT_MODEL` is empty.
+
+On every Agent tool call, pass `model: SUBAGENT_MODEL` when it is non-empty. When it is empty, omit `model`, so the subagent gets Claude Code's default subagent model. Valid values are `opus`, `sonnet`, `haiku` and `fable`.
+
+This lets the orchestrator run on one model while the subagents run on another (e.g. orchestrator on Fable, subagents on Opus). It applies to Agent tool calls only. The external review in step 9 runs through `run-external-review.sh` and is unaffected.
 
 ## Process
 
@@ -155,6 +163,7 @@ Repeat until no `[ ]` checkboxes remain in any Task section:
 5. **Spawn a subagent** using Agent tool with:
    - `mode: "bypassPermissions"`
    - `subagent_type: "general-purpose"`
+   - `model: SUBAGENT_MODEL` when non-empty (see Subagent Model)
    - The task prompt from `prompts/task.md`, with all placeholders substituted as described in the Placeholder Substitution section above (including `USER_RULES`)
 6. **After subagent returns**, re-read the plan file and check if that task's checkboxes are now `[x]`
    - If yes — task succeeded, continue loop
@@ -177,7 +186,7 @@ Report to user: "--- Review phase 1: comprehensive ---"
 
 Loop up to `review_iterations` times (userConfig, default: 5). Track the current iteration number:
 
-1. **Read review.md as a playbook (NOT as a subagent prompt)** — resolve `prompts/review.md` through the override chain and read it from this main session. It tells YOU (the orchestrator) which specialist agents to fan out for the current `REVIEW_PHASE`. Substitute `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `${CLAUDE_PLUGIN_ROOT}`, and `REVIEW_PHASE` in the resolved content. Then follow the playbook FROM THIS SESSION: launch the specified Agent tool calls in a single message for parallel execution. Subagents do not have Agent tool access, so the fanout MUST be initiated from the main orchestrator.
+1. **Read review.md as a playbook (NOT as a subagent prompt)** — resolve `prompts/review.md` through the override chain and read it from this main session. It tells YOU (the orchestrator) which specialist agents to fan out for the current `REVIEW_PHASE`. Substitute `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `${CLAUDE_PLUGIN_ROOT}`, `REVIEW_PHASE`, and `SUBAGENT_MODEL` in the resolved content. Then follow the playbook FROM THIS SESSION: launch the specified Agent tool calls in a single message for parallel execution. Subagents do not have Agent tool access, so the fanout MUST be initiated from the main orchestrator.
    - **Iteration 1**: set `REVIEW_PHASE` to `comprehensive`. Per the playbook, launch 5 parallel review agents (quality, implementation, testing, simplification, documentation).
    - **Iteration 2 and later**: set `REVIEW_PHASE` to `critical`. Per the playbook, launch 2 parallel review agents (quality, implementation) focused on critical/major issues only. Before this iteration, report to user: "--- Review phase 1: critical re-check (iteration N) ---"
 
@@ -199,7 +208,7 @@ Report to user: "--- Review phase 2: code smells analysis ---"
 
 Run once (no loop):
 
-1. **Spawn a smells agent** — resolve `agents/smells.txt` through the override chain. Launch one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the resolved agent prompt.
+1. **Spawn a smells agent** — resolve `agents/smells.txt` through the override chain. Launch one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, `model: SUBAGENT_MODEL` when non-empty, and the resolved agent prompt.
 
 2. **Collect findings** — after the agent returns, report to user with a compact list of findings (one line per finding). Log findings to progress file:
    `bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/append-progress.sh <progress-file> "review phase 2: findings"`
@@ -301,6 +310,7 @@ When stats summary is done (or skipped on failure):
 - NEVER summarize or filter agent findings — pass the full output to the fixer agent verbatim
 - All prompt and agent files MUST be resolved through the three-layer override chain before use
 - All `subagent_type` values must be `general-purpose` — agent files provide the specialized prompt
+- Every Agent tool call passes `model: SUBAGENT_MODEL`, and omits `model` when it is empty (see Subagent Model)
 - After reading a prompt file, substitute all placeholders before passing to subagent (see Placeholder Substitution)
 - Subagents run with NO human available — they must NEVER ask the user a question (no AskUserQuestion, no pausing for input). They decide judgment calls the plan does not settle from the project's lint rules, CLAUDE.md, and code conventions, and log each as a `[decision]`/`[deviation]` line for the completion report
 - In worktree mode (`worktree_mode = true`) the main working directory is never touched — no branch is created or checked out there and no changes land there; all git operations run inside the worktree, and Step 4's create-branch.sh is skipped
