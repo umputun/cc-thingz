@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.12.0 - 2026-11-03
+
+### New Features
+
+- exec: new `subagent_model` setting picks the model for every exec subagent: task agents, the review fanout, fixers, smells, finalize and stats. Valid values are `opus`, `sonnet`, `haiku` and `fable`. This lets the orchestrator run on one model and the subagents on another, so an exec started from a Fable session no longer spends Fable quota on subagent work. Left empty, subagents get Claude Code's default subagent model, as before. The external review in step 9 runs through `run-external-review.sh` and is not affected
+
 ## planning v3.11.0 - 2026-10-25
 
 ### New Features

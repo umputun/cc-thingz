@@ -25,7 +25,7 @@ The script checks project overrides, user overrides, and bundled defaults automa
 
 After reading a prompt file, replace ALL placeholders with actual values before passing to a subagent. Subagents run in fresh contexts without plugin env vars.
 
-Always substitute: `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `DEFAULT_BRANCH`, `${CLAUDE_PLUGIN_ROOT}` (resolve to actual absolute path), `RESOLVE_SCRIPT` (absolute path to `${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/resolve-file.sh`), `PLUGIN_DATA_DIR` (resolved `${CLAUDE_PLUGIN_DATA}` path — passed as second argument to resolve-file.sh so it can find user overrides), `USER_RULES` (resolved custom rules content from the rules loading step, or empty string if no rules found), `SUBAGENT_MODEL` (in `prompts/review.md`: the resolved value from the Subagent Model section, or empty string), and phase-specific values (`FINDINGS_LIST`, `REVIEW_PHASE`, `DIFF_COMMAND`).
+Always substitute: `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `DEFAULT_BRANCH`, `${CLAUDE_PLUGIN_ROOT}` (resolve to actual absolute path), `RESOLVE_SCRIPT` (absolute path to `${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/resolve-file.sh`), `PLUGIN_DATA_DIR` (resolved `${CLAUDE_PLUGIN_DATA}` path — passed as second argument to resolve-file.sh so it can find user overrides), `USER_RULES` (resolved custom rules content from the rules loading step, or empty string if no rules found), and phase-specific values (`FINDINGS_LIST`, `REVIEW_PHASE`, `DIFF_COMMAND`).
 
 ## Custom Rules Loading
 
@@ -186,7 +186,7 @@ Report to user: "--- Review phase 1: comprehensive ---"
 
 Loop up to `review_iterations` times (userConfig, default: 5). Track the current iteration number:
 
-1. **Read review.md as a playbook (NOT as a subagent prompt)** — resolve `prompts/review.md` through the override chain and read it from this main session. It tells YOU (the orchestrator) which specialist agents to fan out for the current `REVIEW_PHASE`. Substitute `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `${CLAUDE_PLUGIN_ROOT}`, `REVIEW_PHASE`, and `SUBAGENT_MODEL` in the resolved content. Then follow the playbook FROM THIS SESSION: launch the specified Agent tool calls in a single message for parallel execution. Subagents do not have Agent tool access, so the fanout MUST be initiated from the main orchestrator.
+1. **Read review.md as a playbook (NOT as a subagent prompt)** — resolve `prompts/review.md` through the override chain and read it from this main session. It tells YOU (the orchestrator) which specialist agents to fan out for the current `REVIEW_PHASE`. Substitute `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, `PROGRESS_FILE_PATH`, `${CLAUDE_PLUGIN_ROOT}`, and `REVIEW_PHASE` in the resolved content. Then follow the playbook FROM THIS SESSION: launch the specified Agent tool calls in a single message for parallel execution. Subagents do not have Agent tool access, so the fanout MUST be initiated from the main orchestrator.
    - **Iteration 1**: set `REVIEW_PHASE` to `comprehensive`. Per the playbook, launch 5 parallel review agents (quality, implementation, testing, simplification, documentation).
    - **Iteration 2 and later**: set `REVIEW_PHASE` to `critical`. Per the playbook, launch 2 parallel review agents (quality, implementation) focused on critical/major issues only. Before this iteration, report to user: "--- Review phase 1: critical re-check (iteration N) ---"
 
@@ -196,7 +196,7 @@ Loop up to `review_iterations` times (userConfig, default: 5). Track the current
 
 3. **If ALL agents reported zero issues** → report "Review phase 1: clean" and proceed to the next phase.
 
-4. **Spawn a fixer agent** — resolve `prompts/fixer.md` through the override chain. Launch with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`. Pass the FULL unedited review output as FINDINGS_LIST — the fixer decides what's real, not you.
+4. **Spawn a fixer agent** — resolve `prompts/fixer.md` through the override chain. Launch with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, `model: SUBAGENT_MODEL` when non-empty. Pass the FULL unedited review output as FINDINGS_LIST — the fixer decides what's real, not you.
 
 5. **After fixer returns** → show the "FIXES:" section to the user. Report "Review phase 1: iteration N fixes applied". Check for uncommitted changes: detect VCS with `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`, then run `git status --porcelain` for `git` or `hg status` for `hg`. If output is non-empty, show every reported path and warn that these uncommitted changes are absent from the committed branch diff used by the next review. This is report-only: do not retry, abort, or commit leftovers because of this check. Loop back to step 1.
 
@@ -216,7 +216,7 @@ Run once (no loop):
 
 3. **If no issues found** → report "Smells analysis: clean" and proceed to the next phase.
 
-4. **Spawn a fixer agent** — resolve `prompts/fixer.md` through the override chain. Launch with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`. Pass the FULL smells output as FINDINGS_LIST.
+4. **Spawn a fixer agent** — resolve `prompts/fixer.md` through the override chain. Launch with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, `model: SUBAGENT_MODEL` when non-empty. Pass the FULL smells output as FINDINGS_LIST.
 
 5. **After fixer returns** → report fixes to user. Check for uncommitted changes: detect VCS with `vcs=$(bash ${CLAUDE_PLUGIN_ROOT}/skills/exec/scripts/detect-vcs.sh)`, then run `git status --porcelain` for `git` or `hg status` for `hg`. If output is non-empty, show every reported path and warn that these uncommitted changes are absent from the committed branch diff used by the next review. This is report-only: do not retry, abort, or commit leftovers because of this check. Proceed to the next phase.
 
@@ -274,13 +274,13 @@ After all reviews pass, rebase and clean up commits.
 
 Report to user: "--- Finalize: rebase and clean up commits ---"
 
-Spawn one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the prompt from `prompts/finalizer.md`. Replace `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, and `PROGRESS_FILE_PATH`.
+Spawn one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, `model: SUBAGENT_MODEL` when non-empty, and the prompt from `prompts/finalizer.md`. Replace `DEFAULT_BRANCH`, `PLAN_FILE_PATH`, and `PROGRESS_FILE_PATH`.
 
 This is best-effort — if rebase fails, report the issue but don't block completion.
 
 ### Step 12. Stats summary
 
-After finalize (or after step 11 was skipped on hg/disabled), spawn one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, and the prompt from `prompts/stats.md`. Replace `DEFAULT_BRANCH` and `PROGRESS_FILE_PATH` in the resolved content.
+After finalize (or after step 11 was skipped on hg/disabled), spawn one Agent tool call with `mode: "bypassPermissions"`, `subagent_type: "general-purpose"`, `model: SUBAGENT_MODEL` when non-empty, and the prompt from `prompts/stats.md`. Replace `DEFAULT_BRANCH` and `PROGRESS_FILE_PATH` in the resolved content.
 
 The stats agent reads this session's main log + subagent logs from `~/.claude/projects/<cwd-encoded>/`, aggregates per-phase token/duration/tool-use counts, runs `git diff --shortstat DEFAULT_BRANCH...HEAD` for branch churn, and returns a compact markdown report.
 
