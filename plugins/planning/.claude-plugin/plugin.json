@@ -39,6 +39,12 @@
       "description": "Whether to run the finalize phase (rebase and squash commits).",
       "default": true
     },
+    "subagent_model": {
+      "title": "Subagent model",
+      "type": "string",
+      "description": "Model for all exec subagents: opus, sonnet, haiku or fable. Leave empty for Claude Code's default subagent model.",
+      "default": ""
+    },
     "plans_dir": {
       "title": "Plans directory",
       "type": "string",

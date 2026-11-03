@@ -54,6 +54,7 @@ Set via `userConfig` in plugin.json (prompted at install):
 | `review_iterations` | `5` | max fix-and-recheck cycles |
 | `external_review_iterations` | `10` | max external review iterations |
 | `finalize_enabled` | `true` | run rebase + squash phase |
+| `subagent_model` | *(empty — Claude Code's default subagent model)* | model for all exec subagents: `opus`, `sonnet`, `haiku` or `fable` |
 | `plans_dir` | `docs/plans` | directory for plan files |
 
 ### Customization

@@ -363,6 +363,15 @@ assert_output "SKILL.md single-quotes the config token" "1" "$invocation"
 bad_quote=$(grep -c "run-external-review.sh \"\${user_config" "$skill_md" || true)
 assert_output "SKILL.md does not double-quote the config token" "0" "$bad_quote"
 
+# subagent_model reaches the skill only through ${user_config.KEY} substitution; a bare
+# key name is never resolved, so every subagent silently runs on the default model
+model_token=$(grep -c "\${user_config.subagent_model}" "$skill_md" || true)
+assert_output "SKILL.md reads subagent_model through the config token" "1" "$model_token"
+# an unconfigured option stays as the literal token, which fails the Agent model check
+# on every spawn unless the skill treats it as empty
+model_guard=$(grep -c "still starts with \`\${user_config.\`" "$skill_md" || true)
+assert_output "SKILL.md treats the unconfigured token as empty" "1" "$model_guard"
+
 echo "== external-plan-review agent invocation =="
 
 agent_md="$(dirname "$(dirname "$(dirname "$(dirname "$REVIEW_SCRIPT")")")")/agents/external-plan-review.md"
