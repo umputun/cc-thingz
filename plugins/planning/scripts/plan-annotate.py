@@ -131,7 +131,8 @@ def build_editor_cmd(editor: str) -> str:
 def open_editor(filepath: Path, target_window: bool = True) -> int:
     """open file in $EDITOR via a terminal overlay, blocking until the editor closes.
     tries agterm first (if $AGTERM_SESSION_ID is set), then tmux (if $TMUX), then kitty,
-    then wezterm. returns non-zero if none is available.
+    then wezterm. returns non-zero if none is available, or if the tmux, kitty or wezterm
+    overlay launch fails.
     when target_window is True (hook mode), targets the kitty window from KITTY_WINDOW_ID.
     when False (file mode), opens in the currently focused window. agterm always targets the
     current session via $AGTERM_SESSION_ID, so target_window does not affect it."""
@@ -202,7 +203,9 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
             if kitty_wid:
                 cmd.extend(["--match", f"window_id:{kitty_wid}"])
         cmd.extend(["sh", "-c", wrapper])
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if result.returncode != 0:
+            return result.returncode
         while not sentinel.exists():
             time.sleep(0.3)
         sentinel.unlink(missing_ok=True)
@@ -216,11 +219,13 @@ def open_editor(filepath: Path, target_window: bool = True) -> int:
         os.unlink(sentinel_path)
         sentinel = Path(sentinel_path)
         wrapper = f'{editor_cmd} {shlex.quote(str(filepath))}; touch {shlex.quote(str(sentinel))}'
-        subprocess.run(
+        result = subprocess.run(
             ["wezterm", "cli", "split-pane", "--bottom", "--percent", "80",
              "--pane-id", wezterm_pane, "--", "sh", "-c", wrapper],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
+        if result.returncode != 0:
+            return result.returncode
         while not sentinel.exists():
             time.sleep(0.3)
         sentinel.unlink(missing_ok=True)
@@ -489,10 +494,31 @@ def run_tests() -> None:
             self.assertIn("vi", result)
             self.assertNotIn("emacs", result)
 
+    class TestOpenEditorLaunchFailure(unittest.TestCase):
+        # regression: a failed kitty or wezterm launch polled the sentinel forever
+        def check_failed_launch(self, env: dict[str, str], binary: str) -> None:
+            from unittest import mock
+            markers = ("AGTERM_SESSION_ID", "TMUX", "KITTY_LISTEN_ON", "WEZTERM_PANE")
+            clean = {k: v for k, v in os.environ.items() if k not in markers}
+            failed = subprocess.CompletedProcess(args=[], returncode=7)
+            with mock.patch.dict(os.environ, {**clean, **env}, clear=True), \
+                    mock.patch("shutil.which", side_effect=lambda name: f"/usr/bin/{name}" if name == binary else None), \
+                    mock.patch("subprocess.run", return_value=failed) as run, \
+                    mock.patch("time.sleep", side_effect=AssertionError("polled the sentinel after a failed launch")):
+                self.assertEqual(open_editor(Path("/tmp/plan-review-test.md")), 7)
+            self.assertEqual(run.call_count, 1)
+            self.assertEqual(run.call_args.args[0][0], binary)
+
+        def test_kitty_launch_failure_returns_status(self) -> None:
+            self.check_failed_launch({"KITTY_LISTEN_ON": "unix:/tmp/kitty-test"}, "kitty")
+
+        def test_wezterm_launch_failure_returns_status(self) -> None:
+            self.check_failed_launch({"WEZTERM_PANE": "3"}, "wezterm")
+
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     for tc in [TestGetDiff, TestReadPlanFromStdin, TestResponses, TestFileMode, TestDisableReview,
-               TestBuildEditorCmd]:
+               TestBuildEditorCmd, TestOpenEditorLaunchFailure]:
         suite.addTests(loader.loadTestsFromTestCase(tc))
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

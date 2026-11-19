@@ -4,6 +4,12 @@ This repo ships independent Claude Code plugins. Version headings use values fro
 
 Entries are sorted by plugin version date, newest first.
 
+## planning v3.12.1 - 2026-11-18
+
+### Bug Fixes
+
+- plan review: the `$EDITOR` fallback in `plan-annotate.py` reports kitty and WezTerm overlay launch errors immediately instead of waiting for the editor. A launch that failed, for example with kitty remote control off or a stale socket, left it waiting for an editor that never started. It now reports "no overlay terminal available", the way tmux already did. Related to https://github.com/umputun/cc-thingz/issues/62
+
 ## planning v3.12.0 - 2026-11-03
 
 ### New Features
